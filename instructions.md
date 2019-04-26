@@ -1,3 +1,9 @@
+## Transpile Typescript code
+
+Since this project is written using Typescript, you need to transpile it.
+
+You can run transpile.cmd to achieve that.
+
 ## Run instructions
 
 Go to your application's directory and run the following command :
