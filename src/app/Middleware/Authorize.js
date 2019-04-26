@@ -1,14 +1,11 @@
 /*
  * File:          Adoscope.js
- * Project:       adoscopejs
- * Created Date:  27/04/2019 12:35:06
+ * Project:       adoscope
  * Author:        Paradox
- *
- * Last Modified: 27/04/2019 12:52:20
- * Modified By:   Paradox
  *
  * Copyright (c) 2019 Paradox.
  */
+
 
 'use strict'
 

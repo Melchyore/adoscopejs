@@ -1,6 +1,13 @@
+/*
+ * File:          Entry.js
+ * Project:       adoscope
+ * Author:        Paradox
+ *
+ * Copyright (c) 2019 Paradox.
+ */
+
 'use strict'
 
-/** @type {typeof import('@adonisjs/lucid/src/Lucid/Model')} */
 const Model = use('Model')
 
 class Entry extends Model {

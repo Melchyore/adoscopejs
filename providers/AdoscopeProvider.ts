@@ -1,11 +1,7 @@
 /*
  * File:          AdoscopeProvider.ts
- * Project:       adonis-fullstack-app
- * Created Date:  16/04/2019 6:17:00
+ * Project:       adoscope
  * Author:        Paradox
- *
- * Last Modified: 26/04/2019 10:00:25
- * Modified By:   Paradox
  *
  * Copyright (c) 2019 Paradox.
  */
@@ -99,7 +95,7 @@ class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
     this.app.autoload(path.join(__dirname, '../src/app'), 'Adoscope/App')
     this.app.autoload(path.join(__dirname, '../src/Services'), 'Adoscope/Services')
     this._addRoutes()
-    this._monkeyPatch()
+    //this._monkeyPatch()
   }
 }
 

@@ -1,3 +1,11 @@
+/*
+ * File:          adoscope_entries_schema.js
+ * Project:       adoscope
+ * Author:        Paradox
+ *
+ * Copyright (c) 2019 Paradox.
+ */
+
 'use strict'
 
 const Schema = use('Schema')

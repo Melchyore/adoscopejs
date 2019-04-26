@@ -1,11 +1,7 @@
 /*
  * File:          Adoscope.ts
- * Project:       adonis-fullstack-app
- * Created Date:  16/04/2019 10:45:05
+ * Project:       adoscope
  * Author:        Paradox
- *
- * Last Modified: 26/04/2019 9:35:11
- * Modified By:   Paradox
  *
  * Copyright (c) 2019 Paradox.
  */

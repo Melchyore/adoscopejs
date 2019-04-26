@@ -1,11 +1,7 @@
 /*
  * File:          RequestWatcher.ts
- * Project:       adonis-fullstack-app
- * Created Date:  16/04/2019 10:28:59
+ * Project:       adoscope
  * Author:        Paradox
- *
- * Last Modified: 26/04/2019 10:06:04
- * Modified By:   Paradox
  *
  * Copyright (c) 2019 Paradox.
  */

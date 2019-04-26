@@ -1,6 +1,6 @@
 /*
  * File:          AdoscopeController
- * Project:       Adoscope
+ * Project:       adoscope
  * Author:        Paradox
  *
  * Copyright (c) 2019 Paradox.

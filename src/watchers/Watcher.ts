@@ -1,15 +1,10 @@
 /*
  * File:          Watcher.ts
- * Project:       adoscopejs
- * Created Date:  26/04/2019 6:57:26
+ * Project:       adoscope
  * Author:        Paradox
- *
- * Last Modified: 26/04/2019 10:16:21
- * Modified By:   Paradox
  *
  * Copyright (c) 2019 Paradox.
  */
-
 import { EntryContent } from '../Contracts'
 
 import EntryType from '../EntryType'

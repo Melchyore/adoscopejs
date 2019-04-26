@@ -1,13 +1,7 @@
-import Adoscope from "../Adoscope";
-
 /*
  * File:          QueryWatcher.ts
- * Project:       adoscopejs
- * Created Date:  22/04/2019 1:07:02
+ * Project:       adoscope
  * Author:        Paradox
- *
- * Last Modified: 26/04/2019 9:49:00
- * Modified By:   Paradox
  *
  * Copyright (c) 2019 Paradox.
  */
