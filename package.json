@@ -18,7 +18,7 @@
     "applications"
   ],
   "author": "Paradox",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@types/lodash": "^4.14.123",
     "@types/mime-types": "^2.1.0",
