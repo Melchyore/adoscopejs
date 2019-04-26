@@ -1,0 +1,42 @@
+{
+  "name": "adoscopejs",
+  "version": "0.0.14",
+  "description": "Debugger for Adonisjs-based applications",
+  "main": "index.js",
+  "scripts": {
+    "mix": "webpack --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "adonis",
+    "adonisjs",
+    "adoscope",
+    "adoscopejs",
+    "debugger",
+    "debug_tool",
+    "test",
+    "applications"
+  ],
+  "author": "Paradox",
+  "license": "ISC",
+  "dependencies": {
+    "@types/lodash": "^4.14.123",
+    "@types/mime-types": "^2.1.0",
+    "@types/node": "^11.13.7",
+    "@types/on-finished": "^2.3.1",
+    "@types/path-to-regexp": "^1.7.0",
+    "@types/pluralize": "0.0.29",
+    "@types/pretty-ms": "^4.0.0",
+    "lodash": "^4.17.11",
+    "on-change": "^1.2.0"
+  },
+  "devDependencies": {
+    "laravel-mix": "^4.0.15",
+    "mime-types": "^2.1.23",
+    "on-finished": "^2.3.0",
+    "pluralize": "^7.0.0",
+    "sass": "^1.19.0",
+    "vue": "^2.6.10",
+    "vue-router": "^3.0.6"
+  }
+}

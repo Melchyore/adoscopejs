@@ -1,0 +1,28 @@
+{
+	"compilerOptions": {
+    "types": ["node"],
+		"lib": [
+      "es2018"
+		],
+		"noImplicitAny": true,
+		"target": "es2018",
+		"module": "commonjs",
+		"allowJs": true,
+		"rootDir": "./",
+		"outDir": "./dist",
+		"sourceMap": false,
+    "inlineSourceMap": false,
+		"watch": true
+	},
+	"exclude": [
+		"dist",
+    "build",
+    "config",
+    "resources",
+    "webpack.mix.js",
+    "instructions.js",
+    "src/Contracts/",
+		"node_modules",
+		"**/*.spec.ts"
+	]
+}
