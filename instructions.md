@@ -27,7 +27,7 @@ const providers = [
 ]
 ```
 
-## Register global middleware
+## Register server middleware
 
 Next, you need to register the middleware to ensure everything works as expected.
 
