@@ -2,7 +2,7 @@
 
 Since this project is written using Typescript, you need to transpile it.
 
-You can run transpile.cmd to achieve that if you're on Windows.
+You can run transpile.cmd to achieve that if you're on Windows and transpile.sh on Linux.
 
 PS : You need typescript installed globally.
 
