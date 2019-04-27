@@ -4,9 +4,7 @@ Since this project is written using Typescript, you need to transpile it.
 
 You can run transpile.cmd to achieve that.
 
-<aside class="notice">
-You need typescript installed globally.
-</aside>
+PS : You need typescript installed globally.
 
 ## Run instructions
 
