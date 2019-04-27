@@ -2,7 +2,7 @@
 
 Since this project is written using Typescript, you need to transpile it.
 
-You can run transpile.cmd to achieve that.
+You can run transpile.cmd to achieve that if you're on Windows.
 
 PS : You need typescript installed globally.
 
@@ -11,7 +11,7 @@ PS : You need typescript installed globally.
 Go to your application's directory and run the following command :
 
 `
-adonis run:instructions path/to/your/directory
+adonis run:instructions path/to/adoscope/directory
 `
 
 Path must be valid and point to the directory where you cloned Adoscope repository.
@@ -23,7 +23,7 @@ After, you need to register the provider inside `start/app.js` file in order to 
 ```js
 const providers = [
   // ... Some providers you've registered before.
-  'path/to/adoscope/dir/dist/providers/AdoscopeProvider'
+  'path-to-adoscope-directory/dir/dist/providers/AdoscopeProvider'
 ]
 ```
 
