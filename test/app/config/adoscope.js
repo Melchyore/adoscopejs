@@ -31,10 +31,6 @@ module.exports = {
   ],
 
   ignore_paths: [
-    //
-  ],
 
-  middleware: [
-    //
   ]
 }

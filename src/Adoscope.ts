@@ -17,7 +17,7 @@ import QueryWatcher from './watchers/QueryWatcher'
 
 import EntryType from './EntryType'
 
-const pathToRegexp = use('path-to-regexp')
+const pathToRegexp = require('path-to-regexp')
 
 /**
  * Main application class.
@@ -49,22 +49,30 @@ export default class Adoscope {
    */
   constructor (
     private _app: any,
-    private _config: Config,
+    private _config: AdoscopeConfig,
     private _route: Route.Manager,
-    private _logger: Logger,
+    private _logger?: Logger,
     private _recordingRequest: boolean = false
   ) {
     this._onFinished = this._app.use('on-finished')
-    this._adoscopeConfig = this._config.merge('adoscope', this._app.use('Adoscope/Config/adoscope'))
-    this._requestWatcher = new RequestWatcher(this._adoscopeConfig, this._route, this._logger)
-    this._queryWatcher = new QueryWatcher(this._app.use('Database'))
-    this._queryWatcher.record()
+    //this._adoscopeConfig = this._config.merge('adoscope', this._app.use('Adoscope/Config/adoscope'))
+    this._requestWatcher = new RequestWatcher(this._config, this._route, this._logger)
+    this._queryWatcher = new QueryWatcher(this, this._app.use('Database'))
+
+    if (this.enabled()) {
+      this._queryWatcher.record()
+    }
 
     _.each(_.values(EntryType), (entry: ValueOf<EntryType>) => {
-      this.data[pluralize.plural(entry)] = []
+      this.data[pluralize.plural(entry.toString())] = []
     })
 
+    // @ts-ignore
     global.Adoscope = this
+  }
+
+  public enabled (): boolean {
+    return Boolean(this._config.enabled)
   }
 
   /**
@@ -84,8 +92,8 @@ export default class Adoscope {
   private _approveRequest(url: string): boolean {
     let approved: boolean = true
 
-    _.each(_.concat(this._adoscopeConfig.ignore_paths, [
-      `${this._adoscopeConfig.path}/(.*)?`
+    _.each(_.concat(this._config.ignore_paths, [
+      `${this._config.path}/(.*)?`
       ]), (path: string) => {
       path = path.replace(/\/\*/g, '/(.*)').replace(/^\/|\/$/g, '')
 
@@ -129,7 +137,7 @@ export default class Adoscope {
    */
   public scriptVariables (): object {
     return {
-      path: this._adoscopeConfig.path,
+      path: this._config.path,
       recording: false
     }
   }

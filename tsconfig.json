@@ -21,8 +21,9 @@
     "resources",
     "webpack.mix.js",
     "instructions.js",
+    "japaFile.js",
     "src/Contracts/",
 		"node_modules",
-		"**/*.spec.ts"
+		"test"
 	]
 }

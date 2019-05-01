@@ -11,9 +11,10 @@ import * as _ from 'lodash'
 import * as prettyMs from 'pretty-ms'
 import onChange from 'on-change'
 
-import { Database, AdoscopeQuery } from '../Contracts'
+import { Database, AdoscopeConfig, AdoscopeQuery } from '../Contracts'
 import EntryType from '../EntryType'
 import Watcher from '../watchers/Watcher'
+import Adoscope from '../Adoscope';
 
 const now = require('performance-now')
 
@@ -30,6 +31,7 @@ export default class QueryWatcher extends Watcher {
   private _statements: {[x: string]: object}
 
   constructor (
+    private _app: Adoscope,
     private _database: Database,
     private _queries: Map<string, AdoscopeQuery> = new Map()
   ) {
@@ -51,14 +53,16 @@ export default class QueryWatcher extends Watcher {
    */
   private _listen (): void {
     this._database.on('query', (query: AdoscopeQuery) => {
-      this._queries.set(
-        query.__knexQueryUid, {
-          start: now(),
-          finished: false,
-          method: query.method,
-          bindings: query.bindings
-        }
-      )
+      if (this._app.enabled()) {
+        this._queries.set(
+          query.__knexQueryUid, {
+            start: now(),
+            finished: false,
+            method: query.method,
+            bindings: query.bindings
+          }
+        )
+      }
     })
   }
 
@@ -107,7 +111,7 @@ export default class QueryWatcher extends Watcher {
    */
   public record (): void {
     this._database.on('query-response', async (response: any, query: Database.Sql, builder: Database.Builder) => {
-      const table = builder._single.table
+      const table = builder._single ? builder._single.table : null
 
       if (!this._approveQuery(table)) {
         return

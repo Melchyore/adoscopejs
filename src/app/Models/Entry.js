@@ -8,10 +8,18 @@
 
 'use strict'
 
+const uuid = use('uuid/v4')
 const Model = use('Model')
 
 class Entry extends Model {
-  static get table() {
+  static boot () {
+    super.boot()
+
+    this.addHook('beforeCreate', async (instance) => {
+      instance.uuid = uuid()
+    })
+  }
+  static get table () {
     return 'adoscope_entries'
   }
 

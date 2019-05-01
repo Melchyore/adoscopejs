@@ -8,6 +8,7 @@
 
 import { EntryStore } from '../Contracts'
 
+// @ts-ignore
 const Entry = use('Adoscope/App/Models/Entry')
 
 class EntryService {

@@ -136,7 +136,7 @@ export default class RequestWatcher extends Watcher {
    *
    * @memberof RequestWatcher
    */
-  public async record (request: Http.Request, response: ServerResponse, session: Http.Session): void {
+  public async record (request: Http.Request, response: ServerResponse, session: Http.Session): Promise<any> {
     const url = request.url()
     const method = request.method()
 
@@ -171,6 +171,7 @@ export default class RequestWatcher extends Watcher {
       }
     }
 
+    // @ts-ignore
     Adoscope.recordingRequest = false
   }
 }

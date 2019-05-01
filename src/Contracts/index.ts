@@ -18,7 +18,7 @@ export type Omit<T, K extends keyof T> = T extends any ? Pick<T, Exclude<keyof T
 export type Overwrite<T, U> = Omit<T, Extract<keyof T, keyof U>> & U
 
 export type AdoscopeConfig = {
-  enable?: boolean,
+  enabled?: string | boolean,
   domain?: string,
   path?: string,
   ignore_paths?: Array<string>,

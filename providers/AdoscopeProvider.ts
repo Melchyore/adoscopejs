@@ -7,7 +7,6 @@
  */
 
 import * as path from 'path'
-import * as fs from 'fs'
 
 import * as _ from 'lodash'
 import * as pluralize from 'pluralize'
@@ -17,6 +16,7 @@ import { ServiceProvider } from '@adonisjs/fold'
 import { ValueOf, Fold, Route, Config } from '../src/Contracts'
 import Adoscope from '../src/Adoscope'
 import EntryType from '../src/EntryType'
+import Utils from '../src/lib/Utils'
 
 class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
   app: Fold.Ioc
@@ -34,17 +34,19 @@ class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
     // NOTE: local mode.
     //const CONTROLLERS_PATH = 'App/Adoscope/Controllers'
 
-    route.group(() => {
-      _.each(_.values(EntryType), (entry: ValueOf<EntryType>) => {
-        const _route = pluralize.plural(<string>entry)
-        const controllerName = `Adoscope${this.capitalize(_route)}Controller`
+    if ([true, 'true'].includes(config.get('adoscope.enabled'))) {
+      route.group(() => {
+        _.each(_.values(EntryType), (entry: ValueOf<EntryType>) => {
+          const _route = pluralize.plural(entry.toString())
+          const controllerName = `Adoscope${this.capitalize(_route)}Controller`
 
-        route.post(`/api/${_route}`, `${CONTROLLERS_PATH}/${controllerName}.index`)
-        route.get(`/api/${_route}/:entryId`, `${CONTROLLERS_PATH}/${controllerName}.show`)
-      })
+          route.post(`/api/${_route}`, `${CONTROLLERS_PATH}/${controllerName}.index`)
+          route.get(`/api/${_route}/:entryId`, `${CONTROLLERS_PATH}/${controllerName}.show`)
+        })
 
-      route.get('/:view?', `${CONTROLLERS_PATH}/AdoscopeController.index`)
-    }).prefix(config.get('adoscope.path', 'adoscope'))
+        route.get('/:view?', `${CONTROLLERS_PATH}/AdoscopeController.index`)
+      }).prefix(config.get('adoscope.path', 'adoscope'))
+    }
   }
 
   private capitalize (s: string) {
@@ -84,7 +86,10 @@ class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
 
   register () {
     this.app.singleton('Adonis/Adoscope', (app: any) => {
-      return new Adoscope(app, app.use('Config'), app.use('Route'), app.use('Logger'))
+      // @ts-ignore
+      const config: Config = app.use('Config')
+
+      return new Adoscope(app, Utils.strToBool(config.merge('adoscope', app.use('Adoscope/Config/adoscope'))), app.use('Route'), app.use('Logger'))
     })
   }
 

@@ -30,6 +30,8 @@ export default class Watcher {
    * @memberof Watcher
    */
   protected async _store (type: EntryType, content: EntryContent): Promise<object> {
+
+    // @ts-ignore
     // We MUST require it here, otherwise we'll get "Cannot find module Adoscope/Services/EntryService" error.
     const EntryService = use('Adoscope/Services/EntryService')
 
