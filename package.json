@@ -7,6 +7,10 @@
     "mix": "webpack --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
     "test": "./node_modules/.bin/japa"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Melchyore/adoscope.git"
+  },
   "keywords": [
     "adonis",
     "adonisjs",
@@ -19,6 +23,10 @@
   ],
   "author": "Paradox",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Melchyore/adoscope/issues"
+  },
+  "homepage": "https://github.com/Melchyore/adoscope#readme",
   "dependencies": {
     "@types/lodash": "^4.14.123",
     "@types/mime-types": "^2.1.0",
