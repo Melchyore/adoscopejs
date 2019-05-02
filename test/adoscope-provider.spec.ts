@@ -10,20 +10,24 @@ import * as path from 'path'
 import * as test from 'japa'
 import * as _ from 'lodash'
 
-import { Lucid } from '../src/Contracts'
-
 // @ts-ignore
 import { ioc } from '@adonisjs/fold'
 
+import { Lucid, AdoscopeConfig } from '../src/Contracts'
+import Utils from '../src/lib/Utils'
 import * as setup from './setup'
+
+let config: AdoscopeConfig = null
 
 test.group('Adoscope provider test', group => {
   group.before(async () => {
     await setup.wire()
     await setup.migrateUp()
 
+    ioc.use('Adonis/Adoscope')
+
     // @ts-ignore
-    this.adoscope = ioc.use('Adonis/Adoscope')
+    config = Utils.strToBool(ioc.use('Config').get('adoscope'))
   })
 
   group.after(async () => {
@@ -42,8 +46,8 @@ test.group('Adoscope provider test', group => {
 
   test('Registered routes should exist', assert => {
     const route = ioc.use('Route')
-    const matchedRouteGET = route.match('/adoscope/api/requests', 'GET')
-    const matchedRoutePOST = route.match('/adoscope/api/requests', 'POST')
+    const matchedRouteGET = route.match(`/adoscope/api/requests`, 'GET')
+    const matchedRoutePOST = route.match(`/adoscope/api/requests`, 'POST')
 
     assert.exists(matchedRouteGET)
     assert.exists(matchedRoutePOST)

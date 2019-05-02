@@ -25,9 +25,8 @@ export async function wire (): Promise<any> {
   ioc.bind('Adonis/Src/Helpers', () => new Helpers(path.join(__dirname, 'app')))
 
   ioc.singleton('Adonis/Adoscope', (app: any) => {
-    return new Adoscope(app, Utils.strToBool(app.use('Config').get('adoscope')), app.use('Route'))
+    return new Adoscope(app, ioc.use('Config').get('adoscope'), app.use('Route'))
   })
-
   ioc.singleton('App/Models/User', (app: any) => {
     const Model = app.use('Model')
     class User extends Model {
@@ -45,9 +44,10 @@ export async function wire (): Promise<any> {
     '@adonisjs/lucid/providers/LucidProvider'
   ]).registerAndBoot()
 
-  const route = ioc.use('Route')
-  route.get('/adoscope/api/requests', '@provider:Adoscope/App/Controllers/Http/AdoscopeRequestsController.show')
-  route.post('/adoscope/api/requests', '@provider:Adoscope/App/Controllers/Http/AdoscopeRequestsController.index')
+  const adoscopePath = ioc.use('Config').get('adoscope.path')
+  const Route = ioc.use('Route')
+  Route.get(`/${adoscopePath}/api/requests`, '@provider:Adoscope/App/Controllers/Http/AdoscopeRequestsController.show')
+  Route.post(`/${adoscopePath}/api/requests`, '@provider:Adoscope/App/Controllers/Http/AdoscopeRequestsController.index')
 }
 
 export async function migrateUp () {

@@ -127,3 +127,4 @@ yarn.lock
 ### Adoscope ###
 dist/
 prepublish
+test/**/*.sqlite
