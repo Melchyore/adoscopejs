@@ -25,7 +25,7 @@ export async function wire (): Promise<any> {
   ioc.bind('Adonis/Src/Helpers', () => new Helpers(path.join(__dirname, 'app')))
 
   ioc.singleton('Adonis/Adoscope', (app: any) => {
-    return new Adoscope(app, ioc.use('Config').get('adoscope'), app.use('Route'))
+    return new Adoscope(app, Utils.strToBool(app.use('Config').get('adoscope')), app.use('Route'))
   })
   ioc.singleton('App/Models/User', (app: any) => {
     const Model = app.use('Model')
