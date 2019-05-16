@@ -12,13 +12,17 @@ const uuid = use('uuid/v4')
 const Model = use('Model')
 
 class Entry extends Model {
+
+  // NOTE: Hooks are NOT executed during bulk operations.
   static boot () {
     super.boot()
 
     this.addHook('beforeCreate', async (instance) => {
       instance.uuid = uuid()
     })
+    this.addTrait('@provider:Adoscope/App/Models/Traits/Jsonify')
   }
+
   static get table () {
     return 'adoscope_entries'
   }
@@ -35,13 +39,6 @@ class Entry extends Model {
     return null
   }
 
-  getContent (content) {
-    return JSON.parse(content)
-  }
-
-  setContent (content) {
-    return JSON.stringify(content)
-  }
 }
 
 module.exports = Entry
