@@ -19,8 +19,10 @@ class AdoscopeRequestController extends BaseController {
     })
   }
 
-  async show ({}) {
-    return 'Test'
+  async show ({ response }) {
+    return response.json({
+      foo: 'bar'
+    })
   }
 }
 
