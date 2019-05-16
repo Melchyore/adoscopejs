@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2019 Paradox.
  */
-import { EntryContent } from '../Contracts'
+import { Entry, EntryContent } from '../Contracts'
 
 import EntryType from '../EntryType'
 
@@ -18,27 +18,34 @@ import EntryType from '../EntryType'
  */
 export default class Watcher {
 
-  constructor () {}
+  // @ts-ignore
+  constructor (private entryService = use('Adoscope/Services/EntryService')) {}
 
-  /**
-   * Stores entry into database.
-   *
-   * @protected
-   *
-   * @param {{[key: string]: any}} content
-   *
-   * @memberof Watcher
-   */
-  protected async _store (type: EntryType, content: EntryContent): Promise<object> {
+  protected async _store (type: EntryType, data: EntryContent): Promise<Entry> {
+    try {
+      return await this.entryService.store({
+        type,
+        content: data
+      })
+    } catch (e) {
+      throw e
+    }
+  }
 
-    // @ts-ignore
-    // We MUST require it here, otherwise we'll get "Cannot find module Adoscope/Services/EntryService" error.
-    const EntryService = use('Adoscope/Services/EntryService')
+  protected async _update (condition: [string, any], data: EntryContent): Promise<boolean> {
+    try {
+      return await this.entryService.update(condition, data)
+    } catch (e) {
+      throw e
+    }
+  }
 
-    return await EntryService.store({
-      type: type,
-      content
-    })
+  protected async _find (uuid: string): Promise<Entry> {
+    try {
+      return await this.entryService.find(uuid)
+    } catch (e) {
+      throw e
+    }
   }
 
 }
