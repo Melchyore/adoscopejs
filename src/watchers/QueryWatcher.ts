@@ -13,7 +13,7 @@ import onChange from 'on-change'
 
 import { Database, AdoscopeConfig, AdoscopeQuery } from '../Contracts'
 import EntryType from '../EntryType'
-import Watcher from '../watchers/Watcher'
+import Watcher from './Watcher'
 import Adoscope from '../Adoscope';
 
 const now = require('performance-now')
@@ -28,8 +28,18 @@ const now = require('performance-now')
  * @extends {Watcher}
  */
 export default class QueryWatcher extends Watcher {
+
   private _statements: {[x: string]: object}
 
+  /**
+   * Creates an instance of QueryWatcher.
+   *
+   * @param {Adoscope} _app
+   * @param {Database} _database
+   * @param {Map<string, AdoscopeQuery>} [_queries=new Map()]
+   *
+   * @memberof QueryWatcher
+   */
   constructor (
     private _app: Adoscope,
     private _database: Database,
@@ -138,4 +148,5 @@ export default class QueryWatcher extends Watcher {
       }*/
     })
   }
+
 }

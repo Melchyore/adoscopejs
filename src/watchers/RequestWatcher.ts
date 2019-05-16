@@ -13,6 +13,8 @@ import * as mime from 'mime-types'
 
 import { Http, Route, AdoscopeConfig } from '../Contracts'
 
+import InvalidMimeTypeException from '../Exceptions/InvalidMimeTypeException'
+import ViewWatcher from './ViewWatcher'
 import EntryType from '../EntryType'
 import Adoscope from '../Adoscope'
 import Watcher from './Watcher'
@@ -33,14 +35,12 @@ export default class RequestWatcher extends Watcher {
    *
    * @param {AdoscopeConfig} _config
    * @param {Route.Manager} _route
-   * @param {*} _logger
    *
    * @memberof RequestWatcher
    */
   constructor (
     private _config: AdoscopeConfig,
-    private _route: Route.Manager,
-    private _logger: any
+    private _route: Route.Manager
   ) {
     super()
   }
@@ -102,14 +102,21 @@ export default class RequestWatcher extends Watcher {
       return false
     }
 
-    return _.includes(_.concat(this._config.mime_types, [
+    const acceptedMimeTypes = _.concat(this._config.mime_types, [
       'text/html',
       'application/json'
-    ]), contentType.toString().split(';')[0])
+    ])
+    const type = contentType.toString().split(';')[0]
+
+    if (_.includes(acceptedMimeTypes, type)) {
+      return true
+    } else {
+      throw new InvalidMimeTypeException(`"${type}" mime type is not registered. You can add it to Adoscope's config file in mime_types array.`)
+    }
   }
 
   /**
-   *
+   * Resolves and return the route that matches the given **url** and **verb**.
    *
    * @private
    *
@@ -133,10 +140,16 @@ export default class RequestWatcher extends Watcher {
    * @param {Http.Request} request
    * @param {ServerResponse} response
    * @param {Http.Session} session
+   * @param {ViewWatcher} viewWatcher
    *
    * @memberof RequestWatcher
    */
-  public async record (request: Http.Request, response: ServerResponse, session: Http.Session): Promise<any> {
+  public async record (
+    request: Http.Request,
+    response: ServerResponse,
+    session: Http.Session,
+    viewWatcher: ViewWatcher
+  ): Promise<any> {
     const url = request.url()
     const method = request.method()
 
@@ -148,7 +161,7 @@ export default class RequestWatcher extends Watcher {
       const middleware = route.middlewareList
 
       if (session.initiated && this._validateMimeType(contentType)) {
-         this._store(EntryType.REQUEST, {
+        this._store(EntryType.REQUEST, {
           method,
           format: mime.extension(contentType.toString()),
           content_type: contentType,
@@ -166,7 +179,8 @@ export default class RequestWatcher extends Watcher {
             handler: this._parseHandler(route.handler),
             middleware: _.filter(middleware, (_middleware: string) => !_middleware.startsWith('av:')),
             validators: _.filter(middleware, (_middleware: string) => _middleware.startsWith('av:'))
-          }
+          },
+          views: viewWatcher.getCompiledViews()
         })
       }
     }
