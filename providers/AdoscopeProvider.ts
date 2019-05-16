@@ -18,7 +18,12 @@ import Adoscope from '../src/Adoscope'
 import EntryType from '../src/EntryType'
 import Utils from '../src/lib/Utils'
 
+const Template = require('edge.js/src/Template')
+const TemplateCompiler = require('edge.js/src/Template/Compiler')
+const AdonisScheduler = require('adonis-scheduler/src/Scheduler/')
+
 class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
+
   app: Fold.Ioc
 
   private _addRoutes () {
@@ -38,7 +43,7 @@ class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
       route.group(() => {
         _.each(_.values(EntryType), (entry: ValueOf<EntryType>) => {
           const _route = pluralize.plural(entry.toString())
-          const controllerName = `Adoscope${this.capitalize(_route)}Controller`
+          const controllerName = `Adoscope${_.capitalize(_route)}Controller`
 
           route.post(`/api/${_route}`, `${CONTROLLERS_PATH}/${controllerName}.index`)
           route.get(`/api/${_route}/:entryId`, `${CONTROLLERS_PATH}/${controllerName}.show`)
@@ -49,11 +54,88 @@ class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
     }
   }
 
-  private capitalize (s: string) {
-    return s.charAt(0).toUpperCase() + s.slice(1)
+  private _monkeyPatchAdonisScheduler () {
+    const debug = require('debug')('adonis:scheduler')
+    const { ioc } = require('@adonisjs/fold')
+    const CE = require('adonis-scheduler/src/Exceptions')
+    const Task = require('adonis-scheduler/src/Scheduler/Task')
+
+    AdonisScheduler.prototype._fetchTask = async function (file: string) {
+      const filePath = path.join(this.tasksPath, file)
+      let task
+      try {
+        task = require(filePath)
+      } catch (e) {
+        if (e instanceof ReferenceError) {
+          debug('Unable to import task class <%s>. Is it a valid javascript class?', file)
+          return
+        } else {
+          throw e
+        }
+      }
+
+      // Get instance of task class
+      const taskInstance = ioc.make(task)
+
+      // Every task must expose a schedule
+      if (!('schedule' in task)) {
+        throw CE.RuntimeException.undefinedTaskSchedule(file)
+      }
+
+      // Every task must expose a handle function
+      if (!('handle' in taskInstance)) {
+        throw CE.RuntimeException.undefinedTaskHandle(file)
+      }
+
+      if (!(taskInstance instanceof Task)) {
+        throw CE.RuntimeException.undefinedInstanceTask(file)
+      }
+
+      // Track currently registered tasks in memory
+      this.registeredTasks.push(taskInstance)
+
+      // Before add task to schedule need check & unlock file if exist
+      const locked = await taskInstance.locker.check()
+      if (locked) {
+        await taskInstance.locker.unlock()
+      }
+
+      // Register task handler
+      this.instance.scheduleJob(task.name, task.schedule, taskInstance._run.bind(taskInstance))
+    }
   }
 
-  private _monkeyPatch() {
+  private _monkeyPatchViews () {
+    const debug = require('debug')('edge:template')
+
+    Template.prototype.compiledViews = []
+    Template.prototype._compileView = function (view: string, asFunction: boolean = true) {
+      const preCompiledView = this._getFromCache(view)
+
+      /**
+       * Return the precompiled view from the cache if
+       * it exists.
+       */
+      if (preCompiledView) {
+        debug('resolving view %s from cache', view)
+        return preCompiledView
+      }
+
+      const compiler = new TemplateCompiler(this._tags, this._loader, asFunction)
+
+      try {
+        const compiledView = compiler.compile(view)
+        this._saveToCache(view, compiledView)
+        this.compiledViews.push(view)
+
+        return compiledView
+      } catch (error) {
+        throw this._prepareStack(view, error)
+      }
+    }
+  }
+
+  private _monkeyPatch () {
     const Event = this.app.use('Event')
     const { Command } = require(path.join(process.cwd(), 'node_modules', '@adonisjs/ace'))
     //const { Command } = require('@adonisjs/ace')
@@ -89,7 +171,7 @@ class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
       // @ts-ignore
       const config: Config = app.use('Config')
 
-      return new Adoscope(app, Utils.strToBool(config.merge('adoscope', app.use('Adoscope/Config/adoscope'))), app.use('Route'), app.use('Logger'))
+      return new Adoscope(app, Utils.parseBooleanString(config.merge('adoscope', app.use('Adoscope/Config/adoscope'))), app.use('Route'), app.use('Helpers'))
     })
   }
 
@@ -99,9 +181,13 @@ class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
     // We MUST autoload this namepace to avoid E_UNDEFINED_METHOD exception when calling Adoscope controller's methods.
     this.app.autoload(path.join(__dirname, '../src/app'), 'Adoscope/App')
     this.app.autoload(path.join(__dirname, '../src/Services'), 'Adoscope/Services')
+    this.app.autoload(path.join(__dirname, '../src/Watchers'), 'Adoscope/Watchers')
     this._addRoutes()
+    this._monkeyPatchViews()
+    this._monkeyPatchAdonisScheduler()
     //this._monkeyPatch()
   }
+
 }
 
 export = AdoscopeProvider
