@@ -10,10 +10,13 @@ import { ServerResponse } from 'http'
 import * as _ from 'lodash'
 import * as pluralize from 'pluralize'
 
-import { ValueOf, Config, Route, Http, Logger, AdoscopeConfig } from '../src/Contracts'
+import { ValueOf, Config, Route, Http, Logger, AdoscopeConfig, Helpers } from '../src/Contracts'
 
-import RequestWatcher from './watchers/RequestWatcher'
-import QueryWatcher from './watchers/QueryWatcher'
+import ScheduleWatcher from './Watchers/ScheduleWatcher'
+import RequestWatcher from './Watchers/RequestWatcher'
+import QueryWatcher from './Watchers/QueryWatcher'
+import ModelWatcher from './Watchers/ModelWatcher'
+import ViewWatcher from './Watchers/ViewWatcher'
 
 import EntryType from './EntryType'
 
@@ -23,27 +26,27 @@ const pathToRegexp = require('path-to-regexp')
  * Main application class.
  *
  * @export
+ *
  * @class Adoscope
  */
 export default class Adoscope {
 
   private _onFinished: any
-  private _adoscopeConfig: AdoscopeConfig
+  private _scheduleWatcher: ScheduleWatcher
   private _requestWatcher: RequestWatcher
   private _queryWatcher: QueryWatcher
+  private _modelWatcher: ModelWatcher
 
   public data: {[x: string]: any} = {}
 
   /**
    * Creates an instance of Adoscope and registers the global variable Adoscope.
    *
-   * @constructor
-   *
-   * @param @private {*} _app
-   * @param @private {Config} _config
-   * @param @private {Route.Manager} _route
-   * @param @private {Logger} _logger
-   * @param @private {boolean} [_recordingRequest=false]
+   * @param {*} _app
+   * @param {AdoscopeConfig} _config
+   * @param {Route.Manager} _route
+   * @param {Helpers} _helpers
+   * @param {boolean} [_recordingRequest=false]
    *
    * @memberof Adoscope
    */
@@ -51,16 +54,19 @@ export default class Adoscope {
     private _app: any,
     private _config: AdoscopeConfig,
     private _route: Route.Manager,
-    private _logger?: Logger,
+    private _helpers: Helpers,
     private _recordingRequest: boolean = false
   ) {
     this._onFinished = this._app.use('on-finished')
-    //this._adoscopeConfig = this._config.merge('adoscope', this._app.use('Adoscope/Config/adoscope'))
-    this._requestWatcher = new RequestWatcher(this._config, this._route, this._logger)
+    this._scheduleWatcher = new ScheduleWatcher(this._helpers)
+    this._requestWatcher = new RequestWatcher(this._config, this._route)
     this._queryWatcher = new QueryWatcher(this, this._app.use('Database'))
+    this._modelWatcher = new ModelWatcher(this._config)
 
     if (this.enabled()) {
+      this._scheduleWatcher.record()
       this._queryWatcher.record()
+      this._modelWatcher.record()
     }
 
     _.each(_.values(EntryType), (entry: ValueOf<EntryType>) => {
@@ -71,8 +77,17 @@ export default class Adoscope {
     global.Adoscope = this
   }
 
+  /**
+   * Checks if Adoscope is enabled or not.
+   *
+   * @method enabled
+   *
+   * @returns {boolean}
+   *
+   * @memberof Adoscope
+   */
   public enabled (): boolean {
-    return Boolean(this._config.enabled)
+    return this._config.enabled
   }
 
   /**
@@ -81,7 +96,7 @@ export default class Adoscope {
    *
    * @private
    *
-   * @method _handleApprovedRequests
+   * @method _approveRequest
    *
    * @param {string} url
    *
@@ -108,7 +123,7 @@ export default class Adoscope {
   }
 
   /**
-   * Getter of @_recordingRequest property
+   * Getter for @_recordingRequest property
    *
    * @type {boolean}
    *
@@ -143,15 +158,17 @@ export default class Adoscope {
   }
 
   /**
-   * Tells to @RequestWatcher to record the current request is approved.
+   * Tells to @RequestWatcher to record the current request if approved.
    *
    * @method incomingRequest
    *
    * @param {Http.Context} context
    *
+   * @returns {Promise<void>}
+   *
    * @memberof Adoscope
    */
-  public incomingRequest (context: Http.Context): void {
+  public async incomingRequest (context: Http.Context): Promise<void> {
     const request = context.request
     const response = context.response
     const session = context.session
@@ -165,7 +182,8 @@ export default class Adoscope {
         console.error(err)
       }
 
-      this._requestWatcher.record(request, res, session)
+      this._requestWatcher.record(request, res, session, new ViewWatcher(context.view))
     })
   }
+
 }
