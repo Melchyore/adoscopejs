@@ -27,7 +27,7 @@ module.exports = {
   path: 'adoscope',
 
   mime_types: [
-    //
+    'text/plain'
   ],
 
   ignore_paths: [
