@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "mix": "webpack --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
-    "test": "node japaFile.js"
+    "test": "node japaFile.js",
+    "release": "standard-version"
   },
   "repository": {
     "type": "git",
@@ -31,11 +32,13 @@
     "@types/lodash": "^4.14.123",
     "@types/mime-types": "^2.1.0",
     "@types/node": "^11.13.7",
+    "@types/node-schedule": "^1.2.3",
     "@types/on-finished": "^2.3.1",
     "@types/path-to-regexp": "^1.7.0",
     "@types/pluralize": "0.0.29",
     "@types/pretty-ms": "^4.0.0",
     "lodash": "^4.17.11",
+    "node-schedule": "^1.3.2",
     "on-change": "^1.2.0",
     "uuid": "^3.3.2"
   },
@@ -44,20 +47,39 @@
     "@adonisjs/fold": "^4.0.9",
     "@adonisjs/framework": "^5.0.13",
     "@adonisjs/lucid": "^6.1.3",
+    "@adonisjs/session": "^1.0.28",
     "@adonisjs/sink": "^1.0.17",
+    "@commitlint/cli": "^7.6.1",
+    "@commitlint/config-conventional": "^7.6.0",
+    "@types/supertest": "^2.0.7",
+    "cz-conventional-changelog": "^2.1.0",
+    "husky": "^2.3.0",
     "japa": "^2.0.10",
     "japa-cli": "^1.0.1",
     "laravel-mix": "^4.0.15",
     "mime-types": "^2.1.23",
+    "node-exceptions": "^4.0.1",
     "on-finished": "^2.3.0",
     "performance-now": "^2.1.0",
     "pluralize": "^7.0.0",
     "pretty-ms": "^5.0.0",
     "sass": "^1.19.0",
     "sqlite3": "^4.0.6",
+    "standard-version": "^6.0.1",
+    "supertest": "^4.0.2",
     "ts-node": "^8.1.0",
     "typescript": "^3.4.5",
     "vue": "^2.6.10",
     "vue-router": "^3.0.6"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }

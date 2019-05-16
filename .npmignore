@@ -32,8 +32,10 @@ node_modules
 
 prepublish
 
-./providers
+providers
 
-./src
+src
 
 test
+
+app
