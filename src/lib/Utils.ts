@@ -8,14 +8,38 @@
 
 import * as _ from 'lodash'
 
+/**
+ * Collection of useful functions.
+ *
+ * @export
+ *
+ * @abstract
+ *
+ * @class Utils
+ */
 export default abstract class Utils {
-  static strToBool (obj: object): object {
+
+  /**
+   * Converts string boolean into boolean.
+   *
+   * @static
+   *
+   * @param {object} obj
+   *
+   * @returns {*}
+   *
+   * @memberof Utils
+   */
+  static parseBooleanString (obj: object): object {
     return _.transform(obj, (result: {[key: string]: any}, value: any, key: string) => {
-      if (typeof value === 'string' && _.includes(['true', 'false'], value.toLowerCase())) {
-        result[key] = value === 'true'
-      } else {
-        result[key] = value
-      }
+        result[key] = typeof value === 'string' ? Utils.stringToBoolean(value) : value
     }, {})
   }
+
+  static stringToBoolean (value: string): boolean | string {
+    const lowerCasedValue = value.toLowerCase()
+
+    return _.includes(['true', 'false'], lowerCasedValue) ? lowerCasedValue === 'true' : value
+  }
+
 }
