@@ -7,12 +7,14 @@
  */
 
 enum EntryType {
-  REQUEST = 'request',
-  COMMAND = 'command',
-  MAIL    = 'mail',
-  LOG     = 'log',
-  QUERY   = 'query',
-  EVENT   = 'event',
+  REQUEST  = 'request',
+  COMMAND  = 'command',
+  MODEL    = 'model',
+  MAIL     = 'mail',
+  LOG      = 'log',
+  QUERY    = 'query',
+  EVENT    = 'event',
+  SCHEDULE = 'schedule'
   // More's coming!
 }
 
