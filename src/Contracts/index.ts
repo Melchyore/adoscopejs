@@ -10,15 +10,21 @@ import events = require("events")
 import Bluebird = require("bluebird")
 import GE = require("@adonisjs/generic-exceptions")
 
+import * as Schedule from 'node-schedule'
 import EntryType from '../EntryType'
+import ModelWatcher from "../watchers/ModelWatcher"
 
 export type ValueOf<T> = T[keyof T]
 export type WorkInProgress = any
 export type Omit<T, K extends keyof T> = T extends any ? Pick<T, Exclude<keyof T, K>> : never
 export type Overwrite<T, U> = Omit<T, Extract<keyof T, keyof U>> & U
 
+export type Job = {
+  uuid: string
+} & Schedule.Job
+
 export type AdoscopeConfig = {
-  enabled?: string | boolean,
+  enabled?: boolean,
   domain?: string,
   path?: string,
   ignore_paths?: Array<string>,
@@ -37,6 +43,11 @@ export type AdoscopeQuery = {
   table?: string
 } & Database.Sql
 
+export type Entry = {
+  uuid: string,
+  content: EntryContent
+} & Lucid.Model
+
 export type EntryContent = {
   [key: string]: any
 }
@@ -44,6 +55,10 @@ export type EntryContent = {
 export type EntryStore = {
   type: EntryType,
   content: EntryContent
+}
+
+export interface Helpers {
+  appRoot (): string
 }
 
 export interface Macroable {
@@ -5517,7 +5532,7 @@ export interface Server {
     * @param callback
     * @return
     */
-  close(callback : Function): void
+  close(callback? : Function): void
 }
 
 /**
@@ -5544,6 +5559,8 @@ export interface Server {
   * ```
   */
 export declare class View {
+  compiledViews: Array<string>
+
   engine: View.Engine
   /**
     * Base presenter to be extended when creating
@@ -6784,7 +6801,7 @@ export declare namespace Database {
 
   interface Builder {
     _single: {
-    table: string
+      table: string
     }
 
     //MonkeyPatch.js
@@ -13067,7 +13084,7 @@ declare global {
   function use(namespace: AdonisNamespaces.Antl): Antl
   function use(namespace: AdonisNamespaces.AntlFormats): Formats
   function use(namespace: AdonisNamespaces.DatabaseTransactions): Lucid.DatabaseTransactions
-
+  function use(namespace: 'Adoscope/Watchers/ModelWatcher'): ModelWatcher
 }
 
 declare global {
@@ -13102,6 +13119,7 @@ declare global {
   function make(namespace: AdonisNamespaces.Antl): Antl
   function make(namespace: AdonisNamespaces.AntlFormats): Formats
   function make(namespace: AdonisNamespaces.DatabaseTransactions): Lucid.DatabaseTransactions
+  function make(namespace: 'Adoscope/Watchers/ModelWatcher'): ModelWatcher
 
   const iocResolver : Fold.ResolverManager
 }
