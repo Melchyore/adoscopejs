@@ -1,5 +1,5 @@
 /*
- * File:          Entry.js
+ * File:          AdoscopeEntry.js
  * Project:       adoscope
  * Author:        Paradox
  *
@@ -11,7 +11,7 @@
 const uuid = use('uuid/v4')
 const Model = use('Model')
 
-class Entry extends Model {
+class AdoscopeEntry extends Model {
 
   // NOTE: Hooks are NOT executed during bulk operations.
   static boot () {
@@ -41,4 +41,4 @@ class Entry extends Model {
 
 }
 
-module.exports = Entry
+module.exports = AdoscopeEntry
