@@ -13,6 +13,9 @@ import * as _ from 'lodash'
 import { Database, AdoscopeConfig, Lucid } from '../Contracts'
 
 import AlreadyRegisteredModelException from '../Exceptions/AlreadyRegisteredModelException'
+import NoModelSpecifiedException from '../Exceptions/NoModelSpecifiedException'
+import NotFoundModelException from '../Exceptions/NotFoundModelException'
+import InvalidModelException from '../Exceptions/InvalidModelException'
 import EntryType from '../EntryType'
 import Watcher from './Watcher'
 
@@ -41,32 +44,49 @@ export default class ModelWatcher extends Watcher {
 
   /**
    * Listens to models queries.
+   * [custom=true] means the model does not exist under
+   * model's namespace definied in @member [namespace] .
    *
    * @private
    *
    * @method _process
    *
-   * @param {(string | Function)} _model
+   * @param {(string | Lucid.Model)} _model
+   *
+   * @param {boolean} custom
    *
    * @returns {Promise<void>}
    *
    * @memberof ModelWatcher
    */
-  private async _process (_model: string | Function): Promise<void> {
-    const name = this._getFileName(_model)
+  private async _process (_model: string | Lucid.Model, custom: boolean): Promise<void> {
+    const modelPath = this._getModelPath(_model, custom)
 
-    if (!this._checkAndRegister(name)) {
-      return
+    let model = null
+
+    if (typeof _model === 'function') {
+      model = _model
+    } else {
+      try {
+        // @ts-ignore
+        model = use(modelPath)
+      } catch {
+        throw new NotFoundModelException(modelPath)
+      }
     }
 
-    // @ts-ignore
-    const model = typeof _model === 'function' ? _model : use(name)
-    model.onQuery(async (builder: Database.Sql) => {
+    if (!(model.prototype instanceof use('Model'))) {
+      throw new InvalidModelException(modelPath)
+    }
+
+    this._checkAndRegister(model)
+
+    model.onQuery(async (builder: Database.QueryInterface) => {
       return await this._store(EntryType.MODEL, {
         ..._.update(_.pick(builder, ['method', 'options', 'bindings', 'sql']), 'method', (value: string) => {
           return value === 'del' ? 'delete' : value === 'first' ? 'select' : value
         }),
-        model: name
+        model: modelPath
       })
     })
   }
@@ -75,41 +95,59 @@ export default class ModelWatcher extends Watcher {
   /**
    * Get model name and replace extension if it's a string.
    * Otherwise, get name from constructor.
+   * If it's a custom model, leave it as it is.
    *
    * @private
    *
-   * @method _getFileName
+   * @method _getModelPath
    *
-   * @param {(string | Function)} model
+   * @param {(string | Lucid.Model)} model
+   *
+   * @param {boolean} [custom=false]
    *
    * @returns {string}
    *
    * @memberof ModelWatcher
    */
-  private _getFileName (model: string | Function): string {
-    return typeof model === 'string' ? `${this.namespace}/${model.replace('.js', '').replace('.ts', '')}` : model.name
+  private _getModelPath (model: string | Lucid.Model, custom: boolean = false): string {
+    if (model) {
+      if (typeof model === 'string') {
+        if (!custom) {
+          return `${this.namespace}/${model.replace('.js', '').replace('.ts', '')}`
+        } else {
+          return model
+        }
+      } else if (typeof model === 'function') {
+        return model.name
+      } else {
+        // @ts-ignore Instance of object
+        throw new InvalidModelException(model.constructor.name)
+      }
+    } else {
+      throw new NoModelSpecifiedException('No model specified to be registered.')
+    }
   }
 
   /**
-   * Checks if model is not registered and register it.
+   * Checks if model is not already registered and register it.
    *
    * @private
    *
    * @method _checkAndRegister
    *
-   * @param {string} filePath
+   * @param {Lucid.Model} model
    *
    * @returns {boolean}
    *
    * @memberof ModelWatcher
    */
-  private _checkAndRegister (filePath: string): boolean {
-    if (this._isRegistered(filePath)) {
-      throw new AlreadyRegisteredModelException(`${filePath} is already registered model to watch.`)
-    } else {
-      this._register(filePath)
+  private _checkAndRegister (model: Lucid.Model): void {
+    const name = model.name
 
-      return true
+    if (!this._isRegistered(name)) {
+      this._register(name)
+    } else {
+      throw new AlreadyRegisteredModelException(`${name} is already registered model to watch.`)
     }
   }
 
@@ -141,7 +179,7 @@ export default class ModelWatcher extends Watcher {
    *
    * @memberof ModelWatcher
    */
-  private _register (filePath: string) {
+  private _register (filePath: string): void {
     this._models.add(filePath)
   }
 
@@ -152,7 +190,7 @@ export default class ModelWatcher extends Watcher {
    *
    * @private
    *
-   * @getter namespace
+   * @member namespace
    *
    * @type {string}
    *
@@ -172,15 +210,15 @@ export default class ModelWatcher extends Watcher {
    * @memberof ModelWatcher
    */
   public register (model: Lucid.Model | string): void {
-    this._process(model)
+    this._process(model, true)
   }
 
   /**
-   * Getter for @_models registered models.
+   * Getter for [_models] registered models.
    *
    * @readonly
    *
-   * @getter registeredModels
+   * @member registeredModels
    *
    * @type {Set<string>}
    *
@@ -204,7 +242,7 @@ export default class ModelWatcher extends Watcher {
     if (models.length > 0) {
       _.forEach(models, async (model: string) => {
         if (typeof model === 'string' && !(await promises.stat(path.join(modelsPath, model))).isDirectory()) {
-          this._process(model)
+          this._process(model, false)
         }
       })
     }
