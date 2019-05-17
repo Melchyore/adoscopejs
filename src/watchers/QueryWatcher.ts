@@ -29,8 +29,6 @@ const now = require('performance-now')
  */
 export default class QueryWatcher extends Watcher {
 
-  private _statements: {[x: string]: object}
-
   /**
    * Creates an instance of QueryWatcher.
    *
@@ -43,7 +41,8 @@ export default class QueryWatcher extends Watcher {
   constructor (
     private _app: Adoscope,
     private _database: Database,
-    private _queries: Map<string, AdoscopeQuery> = new Map()
+    private _queries: Map<string, AdoscopeQuery> = new Map(),
+    private _statements: {[x: string]: object} = {}
   ) {
     super()
 
