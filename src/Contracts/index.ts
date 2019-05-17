@@ -13,6 +13,7 @@ import GE = require("@adonisjs/generic-exceptions")
 import * as Schedule from 'node-schedule'
 import EntryType from '../EntryType'
 import ModelWatcher from "../watchers/ModelWatcher"
+import QueryWatcher from "../watchers/QueryWatcher"
 
 export type ValueOf<T> = T[keyof T]
 export type WorkInProgress = any
@@ -20,8 +21,15 @@ export type Omit<T, K extends keyof T> = T extends any ? Pick<T, Exclude<keyof T
 export type Overwrite<T, U> = Omit<T, Extract<keyof T, keyof U>> & U
 
 export type Job = {
-  uuid: string
+  uuid?: string
 } & Schedule.Job
+
+export type WatcherConfig = {
+  enabled: boolean,
+  options: {
+    [key: string]: any
+  }
+}
 
 export type AdoscopeConfig = {
   enabled?: boolean,
@@ -30,8 +38,11 @@ export type AdoscopeConfig = {
   ignore_paths?: Array<string>,
   ignore_commands?: Array<string>,
   mime_types?: Array<string>,
-  middleware?: Array<string>
-}
+  middleware?: Array<string>,
+  watchers?: {
+    [key: string]: WatcherConfig
+  }
+} & object
 
 export type AdoscopeQuery = {
   start: number,
