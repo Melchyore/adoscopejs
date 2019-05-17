@@ -28,18 +28,10 @@ export async function wire (): Promise<any> {
   ioc.singleton('Adonis/Adoscope', (app: any) => {
     return new Adoscope(app, Utils.parseBooleanString(app.use('Config').get('adoscope')), app.use('Route'), app.use('Helpers'))
   })
-  /*ioc.singleton('App/Models/User', (app: any) => {
-    const Model = app.use('Model')
-    class User extends Model {
-    }
-    User._bootIfNotBooted()
-    return User
-  })*/
 
   ioc.autoload(path.join(__dirname, '../config'), 'Adoscope/Config')
   ioc.autoload(path.join(__dirname, '../src/app'), 'Adoscope/App')
   ioc.autoload(path.join(__dirname, '../src/Services'), 'Adoscope/Services')
-  ioc.autoload(path.join(__dirname, '../src/Watchers'), 'Adoscope/Watchers')
   ioc.autoload(path.join(__dirname, '../app'), 'App')
 
   await registrar.providers([

@@ -14,10 +14,9 @@ import * as request from 'supertest'
 // @ts-ignore
 import { ioc } from '@adonisjs/fold'
 
-import { Lucid, AdoscopeConfig, Database } from '../src/Contracts'
+import { Lucid, AdoscopeConfig, Database, WatcherConfig } from '../src/Contracts'
 import Utils from '../src/lib/Utils'
 import * as setup from './setup'
-import RequestWatcher from '../src/watchers/RequestWatcher';
 
 let config: AdoscopeConfig = null
 const appUrl = 'http://127.0.0.1:3333'
@@ -58,6 +57,12 @@ test.group('Adoscope provider test', group => {
 
     assert.exists(matchedRouteGET)
     assert.exists(matchedRoutePOST)
+  })
+
+  test('Enabled watchers should be registered', assert => {
+    const Adoscope = ioc.use('Adonis/Adoscope')
+
+    assert.includeMembers(_.keys(_.pickBy(config.watchers, (value: WatcherConfig) => value.enabled)), [...Adoscope.watchers.keys()])
   })
 
   test('RequestWatcher should record request details into databse', async (assert) => {
@@ -128,10 +133,11 @@ test.group('Adoscope provider test', group => {
     // @ts-ignore
     const Test: Lucid.Model = ioc.use('App/Test')
 
-    const ModelWatcher = ioc.make(ioc.use('Adoscope/Watchers/ModelWatcher').default)
-    ModelWatcher.register(Test)
+    const Adoscope = ioc.use('Adonis/Adoscope')
+    Adoscope.getWatcher('model').register(Test)
+    Adoscope.getWatcher('model').register('Adoscope/App/Models/AdoscopeEntry')
 
-    assert.equal(ModelWatcher.registeredModels.has('Test'), true)
+    assert.equal(Adoscope.getWatcher('model').registeredModels.has('Test'), true)
   })
 
   test('ModelWatcher should record operations on custom registered model', async (assert) => {

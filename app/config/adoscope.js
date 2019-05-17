@@ -32,5 +32,41 @@ module.exports = {
 
   ignore_paths: [
 
-  ]
+  ],
+
+  middleware: [
+    //
+  ],
+
+  watchers: {
+    query: {
+      enabled: true
+    },
+    model: {
+      enabled: true,
+      options: {
+        ignore: [
+
+        ] // List of ignored models.
+      }
+    },
+    request: {
+      enabled: true,
+      options: {
+        mime_types: [
+          'text/plain'
+        ], // List of accepted mime types.
+
+        ignore: [
+
+        ] // List of ignored paths.
+      }
+    },
+    schedule: {
+      enabled: true
+    },
+    view: {
+      enabled: true
+    }
+  }
 }
