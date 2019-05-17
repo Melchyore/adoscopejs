@@ -3,7 +3,7 @@
     "types": ["node"],
 		"lib": [
       "es2018"
-		],
+    ],
 		"noImplicitAny": true,
 		"target": "es2018",
 		"module": "commonjs",
@@ -15,15 +15,17 @@
 		"watch": true
 	},
 	"exclude": [
+    "webpack.mix.js",
+    "instructions.js",
+    "commitlint.config.js",
 		"dist",
     "build",
     "config",
     "resources",
-    "webpack.mix.js",
-    "instructions.js",
     "japaFile.js",
     "src/Contracts/",
 		"node_modules",
-		"test"
+    "test",
+    "app"
 	]
 }
