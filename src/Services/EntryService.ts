@@ -9,7 +9,7 @@
 import { EntryStore, Entry } from '../Contracts'
 
 // @ts-ignore
-const Entry = use('Adoscope/App/Models/Entry')
+const Entry = use('Adoscope/App/Models/AdoscopeEntry')
 
 /**
  * Class used to handle Adoscope's queries.

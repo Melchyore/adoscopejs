@@ -181,7 +181,6 @@ class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
     // We MUST autoload this namepace to avoid E_UNDEFINED_METHOD exception when calling Adoscope controller's methods.
     this.app.autoload(path.join(__dirname, '../src/app'), 'Adoscope/App')
     this.app.autoload(path.join(__dirname, '../src/Services'), 'Adoscope/Services')
-    this.app.autoload(path.join(__dirname, '../src/Watchers'), 'Adoscope/Watchers')
     this._addRoutes()
     this._monkeyPatchViews()
     this._monkeyPatchAdonisScheduler()
