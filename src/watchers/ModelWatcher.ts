@@ -75,6 +75,10 @@ export default class ModelWatcher extends Watcher {
       }
     }
 
+    if (_.includes([...this._config.watchers[this.type].options.ignore, 'AdoscopeEntry'], model.name)) {
+      return
+    }
+
     if (!(model.prototype instanceof use('Model'))) {
       throw new InvalidModelException(modelPath)
     }
@@ -198,6 +202,10 @@ export default class ModelWatcher extends Watcher {
    */
   private get namespace(): string {
     return 'App/Models'
+  }
+
+  public get type (): string {
+    return 'model'
   }
 
   /**

@@ -46,6 +46,10 @@ export default class ScheduleWatcher extends Watcher {
     super()
   }
 
+  public get type (): string {
+    return 'schedule'
+  }
+
   /**
    * Listens to **scheduled** and **run** events on jobs.
    * Stores jobs details into database.

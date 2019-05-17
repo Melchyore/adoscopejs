@@ -111,6 +111,10 @@ export default class QueryWatcher extends Watcher {
     return true
   }
 
+  public get type (): string {
+    return 'query'
+  }
+
   /**
    * Stores query's details into [this._statements] when executed.
    *

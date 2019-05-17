@@ -48,4 +48,8 @@ export default class Watcher {
     }
   }
 
+  public get type (): string {
+    return 'watcher'
+  }
+
 }

@@ -102,10 +102,7 @@ export default class RequestWatcher extends Watcher {
       return false
     }
 
-    const acceptedMimeTypes = _.concat(this._config.mime_types, [
-      'text/html',
-      'application/json'
-    ])
+    const acceptedMimeTypes = [...this._config.watchers.request.options.mime_types, 'text/html', 'application/json']
     const type = contentType.toString().split(';')[0]
 
     if (_.includes(acceptedMimeTypes, type)) {
@@ -131,6 +128,10 @@ export default class RequestWatcher extends Watcher {
    */
   private _validateRoute (url: string, verb: string): Route.MatchedRoute | null {
     return this._route.match(url, verb)
+  }
+
+  public get type (): string {
+    return 'request'
   }
 
   /**

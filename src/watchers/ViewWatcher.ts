@@ -33,6 +33,10 @@ export default class ViewWatcher extends Watcher {
     super()
   }
 
+  public get type (): string {
+    return 'view'
+  }
+
   /**
    * @public
    *
