@@ -17,8 +17,8 @@ export default class AlreadyRegisteredModelException extends BaseException {
    *
    * @memberof AlreadyRegisteredModelException
    */
-  constructor (message: string) {
-    super(message, 'E_ALREADY_REGISTERED_MODEL')
+  constructor (name: string) {
+    super(`${name} is already registered model to watch`, 'E_ALREADY_REGISTERED_MODEL')
   }
 
 }

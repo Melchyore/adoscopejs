@@ -10,7 +10,7 @@ import BaseException from './BaseException'
 export default class NotFoundWatcherException extends BaseException {
 
   constructor (name: string) {
-    super(`${name} watcher not found or not registered`, 'E_NOT_FOUND_WATCHER')
+    super(`${name} watcher not found, not registered or is OFF`, 'E_NOT_FOUND_WATCHER')
   }
 
 }
