@@ -14,9 +14,10 @@ import { ioc, registrar } from '@adonisjs/fold'
 // @ts-ignore
 import { setupResolver, Helpers } from '@adonisjs/sink'
 
+import { HttpContextContract as HttpContext } from '../src/Contracts/Server'
+
 import Adoscope from '../src/Adoscope'
 import Utils from '../src/lib/Utils'
-
 // @ts-ignore
 process.env.SILENT_ENV = true
 
@@ -25,8 +26,10 @@ export async function wire (): Promise<any> {
   ioc.bind('Adonis/Src/Helpers', () => new Helpers(path.join(__dirname, '../app')))
   ioc.alias('Adonis/Src/Helpers', 'Helpers')
 
+  ioc.alias('Adonis/Addons/Cache', 'Cache')
+
   ioc.singleton('Adonis/Adoscope', (app: any) => {
-    return new Adoscope(app, Utils.parseBooleanString(app.use('Config').get('adoscope')), app.use('Route'), app.use('Helpers'))
+    return new Adoscope(app, Utils.parseBooleanString(app.use('Config').get('adoscope')), app.use('Route'), app.use('Cache'), app.use('Helpers'))
   })
 
   ioc.autoload(path.join(__dirname, '../config'), 'Adoscope/Config')
@@ -37,9 +40,41 @@ export async function wire (): Promise<any> {
   await registrar.providers([
     '@adonisjs/framework/providers/AppProvider',
     '@adonisjs/lucid/providers/LucidProvider',
+    '@adonisjs/lucid/providers/MigrationsProvider',
     '@adonisjs/session/providers/SessionProvider',
-    '@adonisjs/framework/providers/ViewProvider'
+    '@adonisjs/framework/providers/ViewProvider',
+    '@adonisjs/websocket/providers/WsProvider',
+    'adonis-cache/providers/CacheProvider'
   ]).registerAndBoot()
+
+  const GE = require('@adonisjs/generic-exceptions')
+  const Server = require('@adonisjs/framework/src/Server')
+  const _Adoscope = ioc.use('Adonis/Adoscope')
+
+  Server.prototype._handleException = async function (error: Error, ctx: HttpContext) {
+    // @ts-ignore
+    error.status = error.status || 500
+
+    _Adoscope.getWatcher('exception').add(error, ctx.request)
+
+    try {
+      // @ts-ignore
+      const handler = ioc.make(ioc.use(this._exceptionHandlerNamespace))
+
+      if (typeof (handler.handle) !== 'function' || typeof (handler.report) !== 'function') {
+        throw GE
+          .RuntimeException
+          .invoke(`${this._exceptionHandlerNamespace} class must have handle and report methods on it`)
+      }
+
+      handler.report(error, { request: ctx.request, auth: ctx.auth })
+      await handler.handle(error, ctx)
+    } catch (error) {
+      ctx.response.status(500).send(`${error.name}: ${error.message}\n${error.stack}`)
+    }
+
+    this._endResponse(ctx.response)
+  }
 
   const adoscopePath = ioc.use('Config').get('adoscope.path')
   const Route = ioc.use('Route')

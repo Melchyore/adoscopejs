@@ -14,21 +14,42 @@ import * as request from 'supertest'
 // @ts-ignore
 import { ioc } from '@adonisjs/fold'
 
-import { Lucid, AdoscopeConfig, Database, WatcherConfig } from '../src/Contracts'
+import { BuilderContract as Builder } from '../src/Contracts/Database'
+import { ModelContract as Model } from '../src/Contracts/Lucid'
+import { AdoscopeConfig } from '../src/Contracts/Adoscope'
+import { WatcherConfig } from '../src/Contracts/Watchers'
+
+import AdoscopeEntryOptions from '../src/AdoscopeEntryOptions'
 import Utils from '../src/lib/Utils'
 import * as setup from './setup'
 
 let config: AdoscopeConfig = null
-const appUrl = 'http://127.0.0.1:3333'
+const appUrl = 'http://127.0.0.1:3334'
 
-function getDatabase(): Database.Builder {
+function getDatabase(): Builder {
   return ioc.use('Database').table('adoscope_entries')
+}
+
+async function testAllWatchers(): Promise<void> {
+  await request(appUrl).get('/')
+
+  const User: Model = ioc.use('App/Models/User')
+
+  await User.create({
+    username: 'Foo'
+  })
 }
 
 test.group('Adoscope provider test', group => {
   group.before(async () => {
     await setup.wire()
     await setup.migrateUp()
+
+    const Server = ioc.use('Server')
+    Server.listen('localhost', 3334)
+    Server
+      .registerGlobal(['Adonis/Middleware/Session'])
+      .use(['Adoscope/App/Middleware/Authorize'])
 
     ioc.use('Adonis/Adoscope')
 
@@ -38,6 +59,13 @@ test.group('Adoscope provider test', group => {
 
   group.after(async () => {
     await setup.migrateDown()
+
+    const Server = ioc.use('Server')
+    Server.close()
+  })
+
+  group.afterEach(async () => {
+    await ioc.use('Database').truncate('adoscope_entries')
   })
 
   test('Provider should exist', assert => {
@@ -65,16 +93,33 @@ test.group('Adoscope provider test', group => {
     assert.includeMembers(_.keys(_.pickBy(config.watchers, (value: WatcherConfig) => value.enabled)), [...Adoscope.watchers.keys()])
   })
 
+  test('Watchers should not/record when recording is disabled/enabled', async (assert) => {
+    const Adoscope = ioc.use('Adonis/Adoscope')
+    Adoscope.stopRecording()
+
+    await testAllWatchers()
+
+    const entries = await getDatabase().pluck('type')
+    assert.equal(entries.length, 0)
+
+    Adoscope.startRecording()
+
+    await testAllWatchers()
+
+    const _entries = await getDatabase().pluck('type')
+    assert.isAbove(_entries.length, 0)
+  })
+
+  test('ExceptionWatcher should record Adonisjs exceptions but not Adoscope', async (assert) => {
+    await request(appUrl).get('/zefzefz')
+
+    const exceptions = await getDatabase().select('content').where('type', 'exception')
+    assert.equal(exceptions.length, 1)
+    assert.equal(JSON.parse(exceptions[0].content).name, 'HttpException')
+  })
+
   test('RequestWatcher should record request details into databse', async (assert) => {
-    const Server = ioc.use('Server')
-    Server.listen('localhost', 3333)
-    Server
-      .registerGlobal(['Adonis/Middleware/Session'])
-      .use(['Adoscope/App/Middleware/Authorize'])
-
     assert.equal((await request(appUrl).get('/')).status, 200)
-
-    Server.close()
 
     const requests = await getDatabase().select('content').where('type', 'request')
     assert.equal(requests.length, 1)
@@ -82,7 +127,7 @@ test.group('Adoscope provider test', group => {
   })
 
   test('QueryWatcher should record query details into database', async (assert) => {
-    const User: Lucid.Model = ioc.use('App/Models/User')
+    const User: Model = ioc.use('App/Models/User')
 
     const user = await User.create({
       username: 'Paradox'
@@ -99,22 +144,26 @@ test.group('Adoscope provider test', group => {
   })
 
   test('ModelWatcher should record operations on models into database', async (assert) => {
-    const User: Lucid.Model = ioc.use('App/Models/User')
+    const User: Model = ioc.use('App/Models/User')
+
+    // INSERT.
     await User.create({
       username: 'Foo'
     })
 
+    // SELECT.
     const foundUser = await User.find(1)
+
+    // UPDATE.
     foundUser.merge({
       username: 'Test'
     })
     await foundUser.save()
 
     const entry = await getDatabase().select('content').where('type', 'model')
-    // NOTE: entry[0] contains the content of the first query in the previous test.
-    const insert = JSON.parse(entry[1].content)
-    const select = JSON.parse(entry[2].content)
-    const update = JSON.parse(entry[3].content)
+    const insert = JSON.parse(entry[0].content)
+    const select = JSON.parse(entry[1].content)
+    const update = JSON.parse(entry[2].content)
 
     assert.equal(insert.method, 'insert')
     assert.includeMembers(insert.bindings, ['Foo'])
@@ -131,28 +180,54 @@ test.group('Adoscope provider test', group => {
 
   test('ModelWatcher should register custom model', async (assert) => {
     // @ts-ignore
-    const Test: Lucid.Model = ioc.use('App/Test')
+    const Test: Model = ioc.use('App/Test')
 
     const Adoscope = ioc.use('Adonis/Adoscope')
     Adoscope.getWatcher('model').register(Test)
     Adoscope.getWatcher('model').register('Adoscope/App/Models/AdoscopeEntry')
 
     assert.equal(Adoscope.getWatcher('model').registeredModels.has('Test'), true)
+    assert.equal(Adoscope.getWatcher('model').registeredModels.has('AdoscopeEntry'), false)
   })
 
   test('ModelWatcher should record operations on custom registered model', async (assert) => {
     // @ts-ignore
-    const Test: Lucid.Model = ioc.use('App/Test')
+    const Test: Model = ioc.use('App/Test')
 
     await Test.create({
       foo: 'Bar'
     })
 
     const entry = await getDatabase().select('content').where('type', 'model')
-    const insert = JSON.parse(entry[4].content)
+    const insert = JSON.parse(entry[0].content)
 
     assert.equal(insert.method, 'insert')
     assert.includeMembers(insert.bindings, ['Bar'])
     assert.equal(insert.model, 'Test')
   })
+
+  test('EntryService should return data', async (assert) => {
+    const Factory = ioc.use('Factory')
+
+    Factory.blueprint('Adoscope/App/Models/AdoscopeEntry', async (faker: any, i: number, data: any) => {
+      return {
+        type: data.type,
+        content: {
+          [faker.word()]: faker.sentence()
+        }
+      }
+    })
+
+    await Factory.model('Adoscope/App/Models/AdoscopeEntry').createMany(20, { type: 'request' })
+    await Factory.model('Adoscope/App/Models/AdoscopeEntry').createMany(2, { type: 'command' })
+
+    const Service = ioc.use('Adoscope/Services/EntryService')
+    const requests = await Service.get('request', AdoscopeEntryOptions.getQuery({ id: 0, take: 3, type: 'request' }))
+
+    assert.includeMembers(_.map(requests.rows, (entry: any) => entry.id), [20, 19, 18])
+
+    const _requests = await Service.get('request', AdoscopeEntryOptions.getQuery({ id: 18, take: 3, type: 'request' }))
+
+    assert.includeMembers(_.map(_requests.rows, (entry: any) => entry.id), [17, 16, 15])
+  }).timeout(5000)
 })

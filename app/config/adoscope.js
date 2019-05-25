@@ -67,6 +67,18 @@ module.exports = {
     },
     view: {
       enabled: true
+    },
+    exception: {
+      enabled: true,
+      options: {
+        ignore: ['DeprecationWarning', 'ExperimentalWarning']
+      }
+    },
+    log: {
+      enabled: true,
+      options: {
+
+      }
     }
   }
 }
