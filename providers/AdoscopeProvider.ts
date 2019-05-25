@@ -11,9 +11,14 @@ import * as path from 'path'
 import * as _ from 'lodash'
 import * as pluralize from 'pluralize'
 
+// @ts-ignore
 import { ServiceProvider } from '@adonisjs/fold'
 
-import { ValueOf, Fold, Route, Config } from '../src/Contracts'
+import { ValueOf } from '../src/Contracts'
+import { HttpContextContract as HttpContext } from '../src/Contracts/Server'
+import { IocContract as Ioc, Provider } from '../src/Contracts/Fold'
+import { ConfigContract as Config } from '../src/Contracts/Config'
+import { RouterContract as Route } from '../src/Contracts/Route'
 import Adoscope from '../src/Adoscope'
 import EntryType from '../src/EntryType'
 import Utils from '../src/lib/Utils'
@@ -22,13 +27,13 @@ const Template = require('edge.js/src/Template')
 const TemplateCompiler = require('edge.js/src/Template/Compiler')
 const AdonisScheduler = require('adonis-scheduler/src/Scheduler/')
 
-class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
+class AdoscopeProvider extends ServiceProvider implements Provider {
 
-  app: Fold.Ioc
+  app: Ioc
 
   private _addRoutes () {
     // @ts-ignore
-    const route: Route.Manager = this.app.use('Route')
+    const route: Route = this.app.use('Route')
 
     // @ts-ignore
     const config: Config = this.app.use('Config')
@@ -39,18 +44,52 @@ class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
     // NOTE: local mode.
     //const CONTROLLERS_PATH = 'App/Adoscope/Controllers'
 
-    if ([true, 'true'].includes(config.get('adoscope.enabled'))) {
-      route.group(() => {
-        _.each(_.values(EntryType), (entry: ValueOf<EntryType>) => {
-          const _route = pluralize.plural(entry.toString())
-          const controllerName = `Adoscope${_.capitalize(_route)}Controller`
+    route.group(() => {
+      _.each(_.values(EntryType), (entry: ValueOf<EntryType>) => {
+        const _route = pluralize.plural(entry.toString())
+        const controllerName = `Adoscope${_.capitalize(_route)}Controller`
 
-          route.post(`/api/${_route}`, `${CONTROLLERS_PATH}/${controllerName}.index`)
-          route.get(`/api/${_route}/:entryId`, `${CONTROLLERS_PATH}/${controllerName}.show`)
-        })
+        route.post(`/api/${_route}`, `${CONTROLLERS_PATH}/${controllerName}.index`)
+        route.get(`/api/${_route}/:id`, `${CONTROLLERS_PATH}/${controllerName}.show`)
+      })
 
-        route.get('/:view?', `${CONTROLLERS_PATH}/AdoscopeController.index`)
-      }).prefix(config.get('adoscope.path', 'adoscope'))
+      route.post('/api/entries', `${CONTROLLERS_PATH}/AdoscopeController.entries`)
+      route.get('/:view?', `${CONTROLLERS_PATH}/AdoscopeController.index`)
+    }).prefix(config.get('adoscope.path', 'adoscope'))
+  }
+
+  private _monkeyPatchServer () {
+    const { ioc } = require('@adonisjs/fold')
+    const GE = require('@adonisjs/generic-exceptions')
+    const Server = require('@adonisjs/framework/src/Server')
+
+    Server.prototype._handleException = async function (error: Error, ctx: HttpContext) {
+      // @ts-ignore
+      error.status = error.status || 500
+
+      if (!ctx.request.adoscope) {
+        ctx.request.adoscope = {}
+      }
+
+      ctx.request.adoscope.exception = error
+
+      try {
+        // @ts-ignore
+        const handler = ioc.make(ioc.use(this._exceptionHandlerNamespace))
+
+        if (typeof (handler.handle) !== 'function' || typeof (handler.report) !== 'function') {
+          throw GE
+            .RuntimeException
+            .invoke(`${this._exceptionHandlerNamespace} class must have handle and report methods on it`)
+        }
+
+        handler.report(error, { request: ctx.request, auth: ctx.auth })
+        await handler.handle(error, ctx)
+      } catch (error) {
+        ctx.response.status(500).send(`${error.name}: ${error.message}\n${error.stack}`)
+      }
+
+      this._endResponse(ctx.response)
     }
   }
 
@@ -141,7 +180,7 @@ class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
     //const { Command } = require('@adonisjs/ace')
 
     Command.exec = function (args: object, options: object, viaAce: boolean) {
-      const commandInstance = typeof (global.make) === 'function' ? global.make(this) : new this()
+      const commandInstance = typeof (make) === 'function' ? make(this) : new this()
       commandInstance.viaAce = viaAce
 
       const EntryService = use('Adoscope/Services/EntryService')
@@ -171,7 +210,7 @@ class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
       // @ts-ignore
       const config: Config = app.use('Config')
 
-      return new Adoscope(app, Utils.parseBooleanString(config.merge('adoscope', app.use('Adoscope/Config/adoscope'))), app.use('Route'), app.use('Helpers'))
+      return new Adoscope(app, Utils.parseBooleanString(config.merge('adoscope', app.use('Adoscope/Config/adoscope'))), app.use('Route'), app.use('Cache'), app.use('Helpers'))
     })
   }
 
@@ -182,6 +221,7 @@ class AdoscopeProvider extends ServiceProvider implements Fold.ServiceProvider {
     this.app.autoload(path.join(__dirname, '../src/app'), 'Adoscope/App')
     this.app.autoload(path.join(__dirname, '../src/Services'), 'Adoscope/Services')
     this._addRoutes()
+    this._monkeyPatchServer()
     this._monkeyPatchViews()
     this._monkeyPatchAdonisScheduler()
     //this._monkeyPatch()
