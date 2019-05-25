@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/Melchyore/adoscope/compare/v0.2.1...v0.3.0) (2019-05-25)
+
+
+### Features
+
+* **adoscope:** recording can now be paused ([87eead1](https://github.com/Melchyore/adoscope/commit/87eead1))
+* **app:** add .ts files for controllers ([e3e8b9c](https://github.com/Melchyore/adoscope/commit/e3e8b9c))
+* **config:** add new watchers to config ([f6cb67a](https://github.com/Melchyore/adoscope/commit/f6cb67a))
+* **exceptions:** add more exceptions and refactor older ones ([433284d](https://github.com/Melchyore/adoscope/commit/433284d))
+* **provider:** monkey patch Adonis/Server and refactor some code ([f8c0619](https://github.com/Melchyore/adoscope/commit/f8c0619))
+* **services:** make use of WebSocket controller to send data ([87c0b24](https://github.com/Melchyore/adoscope/commit/87c0b24))
+* **utils:** add new methods for parsing exceptions and logs watchers ([361a487](https://github.com/Melchyore/adoscope/commit/361a487))
+* **watchers:** add exceptions and log watchers ([1475241](https://github.com/Melchyore/adoscope/commit/1475241))
+* **watchers:** watchers base class is now abstract ([16e9a65](https://github.com/Melchyore/adoscope/commit/16e9a65))
+
+
+### Tests
+
+* add new watchers tests ([c18054c](https://github.com/Melchyore/adoscope/commit/c18054c))
+
+
+### BREAKING CHANGES
+
+* **config:** Config file must be updated
+
+
+
 ### [0.2.1](https://github.com/Melchyore/adoscope/compare/v0.2.0...v0.2.1) (2019-05-20)
 
 
