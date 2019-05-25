@@ -6,10 +6,12 @@
  * Copyright (c) 2019 Paradox.
  */
 
-import { EntryStore, Entry } from '../Contracts'
+import { EntryStore, Entry } from '../Contracts/Entry'
+import AdoscopeEntryOptions from '../AdoscopeEntryOptions'
 
 // @ts-ignore
 const Entry = use('Adoscope/App/Models/AdoscopeEntry')
+const Ws = use('Ws')
 
 /**
  * Class used to handle Adoscope's queries.
@@ -40,10 +42,30 @@ class EntryService {
    */
   public static async store (data: EntryStore): Promise<Entry> {
     try {
-      return await Entry.create(data)
+      const entry = await Entry.create(data)
+      const subscriber = Ws.getChannel('adoscope')
+
+      if (subscriber) {
+        const topic = subscriber.topic('adoscope')
+
+        if (topic) {
+          topic.broadcast(data.type, entry)
+        }
+      }
+
+      return entry
     } catch (e) {
       throw e
     }
+  }
+
+  public static async get (type: string, options: AdoscopeEntryOptions): Promise<Array<Entry>> {
+    return await Entry
+      .query()
+      .options(type, options)
+      .limit(options.limit)
+      .orderBy('id', 'desc')
+      .fetch()
   }
 
   /**
@@ -111,6 +133,31 @@ class EntryService {
   public static async findBy (condition: [string, any]): Promise<Entry> {
     try {
       return await Entry.findBy(condition[0], condition[1])
+    } catch (e) {
+      throw e
+    }
+  }
+
+  public static async getAll () : Promise<object> {
+    try {
+      return {
+        requests: await EntryService.findAllBy(['type', 'request']),
+        queries: await EntryService.findAllBy(['type', 'query']),
+        models: await EntryService.findAllBy(['type', 'model']),
+        schedules: await EntryService.findAllBy(['type', 'schedule']),
+        commands: await EntryService.findAllBy(['type', 'command'])
+      }
+    } catch (e) {
+      throw e
+    }
+  }
+
+  public static async findAllBy (condition: [string, any]): Promise<Array<Entry>> {
+    try {
+      return await Entry
+        .query()
+        .where(condition[0], condition[1])
+        .fetch()
     } catch (e) {
       throw e
     }
