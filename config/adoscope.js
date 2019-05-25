@@ -54,7 +54,7 @@ module.exports = {
       enabled: true,
       options: {
         mime_types: [
-
+          'text/plain'
         ], // List of accepted mime types.
 
         ignore: [
@@ -67,6 +67,18 @@ module.exports = {
     },
     view: {
       enabled: true
+    },
+    exception: {
+      enabled: true,
+      options: {
+        ignore: ['DeprecationWarning', 'ExperimentalWarning']
+      }
+    },
+    log: {
+      enabled: true,
+      options: {
+
+      }
     }
   }
 }
