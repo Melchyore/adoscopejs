@@ -10,21 +10,28 @@ import { ServerResponse } from 'http'
 import * as _ from 'lodash'
 import * as pluralize from 'pluralize'
 
-import { ValueOf, Config, Route, Http, Lucid, AdoscopeConfig, Helpers } from '../src/Contracts'
+import { ValueOf } from '../src/Contracts'
+import { HttpContextContract as HttpContext } from './Contracts/Server'
+import { HelpersContract as Helpers } from './Contracts/Helpers'
+import { RouterContract as Route } from './Contracts/Route'
+import { AdoscopeConfig } from './Contracts/Adoscope'
 
 import AlreadyRegisteredWatcherException from './Exceptions/AlreadyRegisteredWatcherException'
+import NoWatcherTypeSpecifiedException from './Exceptions/NoWatcherTypeSpecifiedException'
 import NotFoundWatcherException from './Exceptions/NotFoundWatcherException'
+import ExceptionWatcher from './Watchers/ExceptionWatcher'
 import ScheduleWatcher from './Watchers/ScheduleWatcher'
 import RequestWatcher from './Watchers/RequestWatcher'
 import QueryWatcher from './Watchers/QueryWatcher'
 import ModelWatcher from './Watchers/ModelWatcher'
 import ViewWatcher from './Watchers/ViewWatcher'
-
+import LogWatcher from './Watchers/LogWatcher'
 import EntryType from './EntryType'
 
-type Watcher = RequestWatcher | QueryWatcher | ModelWatcher | ScheduleWatcher
+type Watcher = RequestWatcher | QueryWatcher | ModelWatcher | ScheduleWatcher | ExceptionWatcher | LogWatcher
 
 const pathToRegexp = require('path-to-regexp')
+const now = require('performance-now')
 
 /**
  * Main application class.
@@ -56,9 +63,12 @@ export default class Adoscope {
   constructor (
     private _app: any,
     private _config: AdoscopeConfig,
-    private _route: Route.Manager,
+    private _route: Route,
+    private _cache: any,
     private _helpers: Helpers,
     private _booted: boolean = false,
+    private _cacheKey = 'adoscope:paused',
+    private _shouldRecord: boolean = false,
     private _watchers: Map<string, Watcher> = new Map(),
     private _requestWatcher: RequestWatcher = null,
     private _recordingRequest: boolean = false,
@@ -92,9 +102,10 @@ export default class Adoscope {
     }
 
     this._booted = true
+    this.startRecording()
 
     if (this._shouldWatch('request')) {
-      this._requestWatcher = new RequestWatcher(this._config, this._route)
+      this._requestWatcher = new RequestWatcher(this, this._route)
 
       this._addWatcher(this._requestWatcher)
     }
@@ -108,7 +119,7 @@ export default class Adoscope {
     }
 
     if (this._shouldWatch('model')) {
-      const modelWatcher = new ModelWatcher(this._config)
+      const modelWatcher = new ModelWatcher(this)
 
       this._addWatcher(modelWatcher)
 
@@ -116,11 +127,19 @@ export default class Adoscope {
     }
 
     if (this._shouldWatch('schedule')) {
-      const scheduleWatcher = new ScheduleWatcher(this._helpers)
+      const scheduleWatcher = new ScheduleWatcher(this, this._helpers)
 
       this._addWatcher(scheduleWatcher)
 
       scheduleWatcher.record()
+    }
+
+    if (this._shouldWatch('exception')) {
+      this._addWatcher(new ExceptionWatcher(this))
+    }
+
+    if (this._shouldWatch('log')) {
+      this._addWatcher(new LogWatcher(this))
     }
   }
 
@@ -153,8 +172,12 @@ export default class Adoscope {
    * @memberof Adoscope
    */
   private _addWatcher(watcher: Watcher): void {
-    if (this._hasWatcher(watcher.type)) {
+    if (this.hasWatcher(watcher.type)) {
       throw new AlreadyRegisteredWatcherException(watcher.constructor.name)
+    }
+
+    if (!watcher.type || watcher.type === 'watcher') {
+      throw new NoWatcherTypeSpecifiedException(watcher.constructor.name)
     }
 
     this._watchers.set(watcher.type, watcher)
@@ -174,7 +197,7 @@ export default class Adoscope {
    *
    * @memberof Adoscope
    */
-  private _approveRequest(url: string): boolean {
+  private _approveRequest (url: string): boolean {
     let approved: boolean = true
 
     _.each([...this._config.watchers.request.options.ignore, `${this._config.path}/(.*)?`], (path: string) => {
@@ -190,16 +213,34 @@ export default class Adoscope {
     return approved
   }
 
-  private _hasWatcher (watcher: string): boolean {
-    return this._watchers.has(watcher)
+  public get config (): AdoscopeConfig {
+    return this._config
+  }
+
+  public async startRecording (): Promise<void> {
+    if (await this._cache.get(this._cacheKey, false)) {
+      await this._cache.forget(this._cacheKey)
+    }
+  }
+
+  public async stopRecording (): Promise<void> {
+    await this._cache.put('adoscope:paused', true, +new Date() + 60 * 60 * 24 * 30 * 1000)
+  }
+
+  public async isRecording (): Promise<boolean> {
+    return !(await this._cache.get(this._cacheKey, false))
   }
 
   public get watchers (): Map<string, Watcher> {
     return this._watchers
   }
 
+  public hasWatcher (watcher: string): boolean {
+    return this._watchers.has(watcher)
+  }
+
   public getWatcher (watcher: string): any {
-    if (!this._hasWatcher(watcher)) {
+    if (!this.hasWatcher(watcher)) {
       throw new NotFoundWatcherException(watcher)
     }
 
@@ -251,12 +292,13 @@ export default class Adoscope {
    * @method scriptVariables
    *
    * @returns {object}
+   *
    * @memberof Adoscope
    */
-  public scriptVariables (): object {
+  public async scriptVariables (): Promise<object> {
     return {
       path: this._config.path,
-      recording: false
+      recording: await this.isRecording()
     }
   }
 
@@ -271,21 +313,31 @@ export default class Adoscope {
    *
    * @memberof Adoscope
    */
-  public async incomingRequest (context: Http.Context): Promise<void> {
+  public async incomingRequest (context: HttpContext): Promise<void> {
+    if (!(await this.isRecording())) {
+      return
+    }
+
     const request = context.request
     const response = context.response
     const session = context.session
 
+    if (request.adoscope && request.adoscope.exception) {
+      this.getWatcher('exception').add(request.adoscope.exception, request)
+    }
+
     if (!this._approveRequest(request.url())) {
       return
     }
+
+    const start = now()
 
     this._onFinished(response.response, (err: Error, res: ServerResponse) => {
       if (err) {
         console.error(err)
       }
 
-      this._requestWatcher.record(request, res, session, new ViewWatcher(context.view))
+      this._requestWatcher.record(request, res, session, new ViewWatcher(this, context.view), start)
     })
   }
 
