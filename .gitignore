@@ -129,4 +129,5 @@ dist/
 prepublish
 app/**/*.sqlite
 docs/
-resources/assets
+resources/
+public

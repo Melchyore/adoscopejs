@@ -1,4 +1,5 @@
-let mix = require('laravel-mix')
+const mix = require('laravel-mix')
+const webpack = require('webpack')
 
 /*
  |--------------------------------------------------------------------------
@@ -12,10 +13,20 @@ let mix = require('laravel-mix')
  */
 
 mix.disableSuccessNotifications()
-  .setPublicPath('../../public')
+  .setPublicPath('public')
+  .js('resources/assets/js/app.js', 'public/js')
+  .sass('resources/assets/css/app.scss', 'public/css')
   .version()
-  .js('resources/assets/js/adoscope.js', '../../public/js')
-  .sass('resources/assets/css/adoscope.scss', '../../public/css')
+  .webpackConfig({
+    resolve: {
+      symlinks: false,
+      alias: {
+          '@': path.resolve(__dirname, 'resources/js/'),
+      },
+    },
+    plugins: [new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/)],
+  })
+
 
 // Full API
 // mix.js(src, output);

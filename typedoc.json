@@ -1,0 +1,14 @@
+{
+  "mode": "modules",
+  "out": "docs",
+  "ignoreCompilerErrors": true,
+  "excludeExternals": false,
+  "excludeNotExported": true,
+  "includeDeclarations": false,
+  "hideGenerator": true,
+  "theme": "minimal",
+  "exclude": [
+    "src/Contracts/**/*",
+    "src/database/**/*"
+  ]
+}
