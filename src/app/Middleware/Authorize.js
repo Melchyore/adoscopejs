@@ -13,7 +13,7 @@ const Adoscope = use('Adonis/Adoscope')
 
 class Authorize {
   async handle (context, next) {
-    if (Adoscope.enabled()) {
+    if (Adoscope.enabled() && Adoscope.hasWatcher('request')) {
       Adoscope.recordingRequest = true
       Adoscope.incomingRequest(context)
     }

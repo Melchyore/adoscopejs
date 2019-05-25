@@ -39,6 +39,27 @@ class AdoscopeEntry extends Model {
     return null
   }
 
+  static scopeOptions (query, type, options) {
+    return this.whereType(query, type)
+            .whereBefore(query, options.id)
+  }
+
+  static whereType (query, type) {
+    if (type) {
+      query.where('type', type)
+    }
+
+    return this
+  }
+
+  static whereBefore (query, id) {
+    if (id) {
+      query.where('id', '<', id)
+    }
+
+    return this
+  }
+
 }
 
 module.exports = AdoscopeEntry
