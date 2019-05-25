@@ -10,9 +10,12 @@ import * as path from 'path'
 import * as _ from 'lodash'
 import { scheduledJobs } from 'node-schedule'
 
-import { Helpers, Job } from '../Contracts'
+import { HelpersContract as Helpers } from '../Contracts/Helpers'
+
+import { Job } from '../Contracts'
 import EntryType from '../EntryType'
-import Watcher from "./Watcher"
+import Adoscope from '../Adoscope'
+import Watcher from './Watcher'
 
 // TODO: Improve this class to use other schedulers.
 
@@ -40,14 +43,15 @@ export default class ScheduleWatcher extends Watcher {
    * @memberof ScheduleWatcher
    */
   constructor (
+    private _app: Adoscope,
     private _helpers: Helpers,
     private _scheduledJobs: {[jobName: string]: Job} = scheduledJobs
   ) {
-    super()
+    super(_app.config)
   }
 
-  public get type (): string {
-    return 'schedule'
+  public get type (): EntryType {
+    return EntryType.SCHEDULE
   }
 
   /**
@@ -58,9 +62,14 @@ export default class ScheduleWatcher extends Watcher {
    *
    * @memberof ScheduleWatcher
    */
-  public record () {
-    Object.values(this._scheduledJobs).forEach((job: Job) => {
+  public record (): void {
+    // @ts-ignore
+    Object.values(this._scheduledJobs).every(async (job: Job) => {
       job.on('scheduled', async (date: Date) => {
+        if (!(await this._app.isRecording())) {
+          return false
+        }
+
         const name = job.name
 
         const { uuid } = await this._store(

@@ -5,7 +5,11 @@
  *
  * Copyright (c) 2019 Paradox.
  */
-import { Entry, EntryContent } from '../Contracts'
+
+import { Entry, EntryContent } from '../Contracts/Entry'
+import { WatcherContract } from '../Contracts/Watchers'
+import { AdoscopeConfig } from '../Contracts/Adoscope'
+import { WatcherConfig } from '../Contracts/Watchers'
 
 import EntryType from '../EntryType'
 
@@ -16,10 +20,13 @@ import EntryType from '../EntryType'
  *
  * @class Watcher
  */
-export default class Watcher {
+export default abstract class Watcher implements WatcherContract {
 
   // @ts-ignore
-  constructor (private entryService = use('Adoscope/Services/EntryService')) {}
+  protected constructor (
+    private _config: AdoscopeConfig,
+    private entryService = use('Adoscope/Services/EntryService')
+  ) {}
 
   protected async _store (type: EntryType, data: EntryContent): Promise<Entry> {
     try {
@@ -48,8 +55,12 @@ export default class Watcher {
     }
   }
 
-  public get type (): string {
-    return 'watcher'
+  protected get _watcherConfig (): WatcherConfig {
+    return this._config.watchers[this.type]
   }
+
+  abstract record (...params: any[]): any
+
+  public abstract get type (): EntryType
 
 }

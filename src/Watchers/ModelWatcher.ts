@@ -10,13 +10,15 @@ import { promises } from 'fs'
 import * as path from 'path'
 import * as _ from 'lodash'
 
-import { Database, AdoscopeConfig, Lucid } from '../Contracts'
+import { QueryContract as Query } from '../Contracts/Database'
+import { ModelContract as Model } from '../Contracts/Lucid'
 
 import AlreadyRegisteredModelException from '../Exceptions/AlreadyRegisteredModelException'
 import NoModelSpecifiedException from '../Exceptions/NoModelSpecifiedException'
 import NotFoundModelException from '../Exceptions/NotFoundModelException'
 import InvalidModelException from '../Exceptions/InvalidModelException'
 import EntryType from '../EntryType'
+import Adoscope from '../Adoscope'
 import Watcher from './Watcher'
 
 /**
@@ -38,8 +40,8 @@ export default class ModelWatcher extends Watcher {
    *
    * @memberof ModelWatcher
    */
-  constructor (private _config: AdoscopeConfig, private _models: Set<string> = new Set() ) {
-    super()
+  constructor (private _app: Adoscope, private _models: Set<string> = new Set() ) {
+    super(_app.config)
   }
 
   /**
@@ -51,7 +53,7 @@ export default class ModelWatcher extends Watcher {
    *
    * @method _process
    *
-   * @param {(string | Lucid.Model)} _model
+   * @param {(string | Model)} _model
    *
    * @param {boolean} custom
    *
@@ -59,7 +61,7 @@ export default class ModelWatcher extends Watcher {
    *
    * @memberof ModelWatcher
    */
-  private async _process (_model: string | Lucid.Model, custom: boolean): Promise<void> {
+  private async _process (_model: string | Model, custom: boolean): Promise<void> {
     const modelPath = this._getModelPath(_model, custom)
 
     let model = null
@@ -75,7 +77,7 @@ export default class ModelWatcher extends Watcher {
       }
     }
 
-    if (_.includes([...this._config.watchers[this.type].options.ignore, 'AdoscopeEntry'], model.name)) {
+    if (_.includes([...this._watcherConfig.options.ignore, 'AdoscopeEntry'], model.name)) {
       return
     }
 
@@ -85,8 +87,12 @@ export default class ModelWatcher extends Watcher {
 
     this._checkAndRegister(model)
 
-    model.onQuery(async (builder: Database.QueryInterface) => {
-      return await this._store(EntryType.MODEL, {
+    model.onQuery(async (builder: Query) => {
+      if (!(await this._app.isRecording())) {
+        return
+      }
+
+      return await this._store(this.type, {
         ..._.update(_.pick(builder, ['method', 'options', 'bindings', 'sql']), 'method', (value: string) => {
           return value === 'del' ? 'delete' : value === 'first' ? 'select' : value
         }),
@@ -94,7 +100,6 @@ export default class ModelWatcher extends Watcher {
       })
     })
   }
-
 
   /**
    * Get model name and replace extension if it's a string.
@@ -105,7 +110,7 @@ export default class ModelWatcher extends Watcher {
    *
    * @method _getModelPath
    *
-   * @param {(string | Lucid.Model)} model
+   * @param {(string | Model)} model
    *
    * @param {boolean} [custom=false]
    *
@@ -113,7 +118,7 @@ export default class ModelWatcher extends Watcher {
    *
    * @memberof ModelWatcher
    */
-  private _getModelPath (model: string | Lucid.Model, custom: boolean = false): string {
+  private _getModelPath (model: string | Model, custom: boolean = false): string {
     if (model) {
       if (typeof model === 'string') {
         if (!custom) {
@@ -139,19 +144,19 @@ export default class ModelWatcher extends Watcher {
    *
    * @method _checkAndRegister
    *
-   * @param {Lucid.Model} model
+   * @param {Model} model
    *
    * @returns {boolean}
    *
    * @memberof ModelWatcher
    */
-  private _checkAndRegister (model: Lucid.Model): void {
+  private _checkAndRegister (model: Model): void {
     const name = model.name
 
     if (!this._isRegistered(name)) {
       this._register(name)
     } else {
-      throw new AlreadyRegisteredModelException(`${name} is already registered model to watch.`)
+      throw new AlreadyRegisteredModelException(name)
     }
   }
 
@@ -204,8 +209,8 @@ export default class ModelWatcher extends Watcher {
     return 'App/Models'
   }
 
-  public get type (): string {
-    return 'model'
+  public get type (): EntryType {
+    return EntryType.MODEL
   }
 
   /**
@@ -213,11 +218,11 @@ export default class ModelWatcher extends Watcher {
    *
    * @method register
    *
-   * @param {(Lucid.Model | string)} model
+   * @param {(Model | string)} model
    *
    * @memberof ModelWatcher
    */
-  public register (model: Lucid.Model | string): void {
+  public register (model: Model | string): void {
     this._process(model, true)
   }
 

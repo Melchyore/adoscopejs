@@ -8,7 +8,10 @@
 
 import * as _ from 'lodash'
 
-import { View } from '../Contracts'
+import { ViewContract as View } from '../Contracts/View'
+
+import EntryType from '../EntryType'
+import Adoscope from '../Adoscope'
 import Watcher from './Watcher'
 
 /**
@@ -25,17 +28,19 @@ export default class ViewWatcher extends Watcher {
   /**
    * Creates an instance of ViewWatcher.
    *
-   * @param {View} _template
+   * @param {View} _view
    *
    * @memberof ViewWatcher
    */
-  constructor (private _template: View) {
-    super()
+  constructor (private _app: Adoscope, private _view: View) {
+    super(_app.config)
   }
 
-  public get type (): string {
-    return 'view'
+  public get type (): EntryType {
+    return EntryType.VIEW
   }
+
+  public record (): void {}
 
   /**
    * @public
@@ -47,7 +52,7 @@ export default class ViewWatcher extends Watcher {
    * @memberof ViewWatcher
    */
   public getCompiledViews (): Array<string> {
-    let compiledViews = this._template.compiledViews
+    let compiledViews = this._view.compiledViews
 
     return _.remove(compiledViews)
   }

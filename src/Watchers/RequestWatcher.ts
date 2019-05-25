@@ -10,14 +10,19 @@ import { ServerResponse } from 'http'
 
 import * as _ from 'lodash'
 import * as mime from 'mime-types'
+import * as prettyMs from 'pretty-ms'
 
-import { Http, Route, AdoscopeConfig } from '../Contracts'
+import { RouterContract as Route, MatchedRoute } from '../Contracts/Route'
+import { RequestContract as Request } from '../Contracts/Request'
+import { SessionContract as Session } from '../Contracts/Session'
 
 import InvalidMimeTypeException from '../Exceptions/InvalidMimeTypeException'
 import ViewWatcher from './ViewWatcher'
 import EntryType from '../EntryType'
 import Adoscope from '../Adoscope'
 import Watcher from './Watcher'
+
+const now = require('performance-now')
 
 /**
  * Class used to record incoming requests and store request/route details into database.
@@ -39,10 +44,10 @@ export default class RequestWatcher extends Watcher {
    * @memberof RequestWatcher
    */
   constructor (
-    private _config: AdoscopeConfig,
-    private _route: Route.Manager
+    private _app: Adoscope,
+    private _route: Route
   ) {
-    super()
+    super(_app.config)
   }
 
   /**
@@ -102,7 +107,7 @@ export default class RequestWatcher extends Watcher {
       return false
     }
 
-    const acceptedMimeTypes = [...this._config.watchers.request.options.mime_types, 'text/html', 'application/json']
+    const acceptedMimeTypes = [...this._watcherConfig.options.mime_types, 'text/html', 'application/json']
     const type = contentType.toString().split(';')[0]
 
     if (_.includes(acceptedMimeTypes, type)) {
@@ -126,12 +131,12 @@ export default class RequestWatcher extends Watcher {
    *
    * @memberof RequestWatcher
    */
-  private _validateRoute (url: string, verb: string): Route.MatchedRoute | null {
+  private _validateRoute (url: string, verb: string): MatchedRoute | null {
     return this._route.match(url, verb)
   }
 
-  public get type (): string {
-    return 'request'
+  public get type (): EntryType {
+    return EntryType.REQUEST
   }
 
   /**
@@ -146,47 +151,50 @@ export default class RequestWatcher extends Watcher {
    * @memberof RequestWatcher
    */
   public async record (
-    request: Http.Request,
+    request: Request,
     response: ServerResponse,
-    session: Http.Session,
-    viewWatcher: ViewWatcher
+    session: Session,
+    viewWatcher: ViewWatcher,
+    start: number
   ): Promise<any> {
-    const url = request.url()
-    const method = request.method()
+    try {
+      const url = request.url()
+      const method = request.method()
 
-    const _route = this._validateRoute(url, method)
+      const _route = this._validateRoute(url, method)
 
-    if (_route) {
-      const contentType = response.getHeader('Content-Type')
-      const route = _route.route
-      const middleware = route.middlewareList
+      if (_route) {
+        const contentType = response.getHeader('Content-Type')
+        const route = _route.route
+        const middleware = route.middlewareList
 
-      if (session.initiated && this._validateMimeType(contentType)) {
-        this._store(EntryType.REQUEST, {
-          method,
-          format: mime.extension(contentType.toString()),
-          content_type: contentType,
-          status_text: response.statusMessage,
-          status_code: response.statusCode,
-          payload: request.all(),
-          headers: request.headers(),
-          cookies: request.cookies(),
-          response_headers: response.getHeaders(),
-          path: request.url(),
-          session_variables: session.all(),
-          protocol: request.protocol().toUpperCase(),
-          hostname: request.hostname(),
-          route_details: {
-            handler: this._parseHandler(route.handler),
-            middleware: _.filter(middleware, (_middleware: string) => !_middleware.startsWith('av:')),
-            validators: _.filter(middleware, (_middleware: string) => _middleware.startsWith('av:'))
-          },
-          views: viewWatcher.getCompiledViews()
-        })
+        if (session.initiated && this._validateMimeType(contentType)) {
+          this._store(this.type, {
+            method,
+            format: mime.extension(contentType.toString()),
+            content_type: contentType,
+            status_text: response.statusMessage,
+            status_code: response.statusCode,
+            payload: request.all(),
+            headers: request.headers(),
+            cookies: request.cookies(),
+            response_headers: response.getHeaders(),
+            path: request.url(),
+            session_variables: session.all(),
+            protocol: request.protocol().toUpperCase(),
+            hostname: request.hostname(),
+            route_details: {
+              handler: this._parseHandler(route.handler),
+              middleware: _.filter(middleware, (_middleware: string) => !_middleware.startsWith('av:')),
+              validators: _.filter(middleware, (_middleware: string) => _middleware.startsWith('av:'))
+            },
+            views: viewWatcher.getCompiledViews(),
+            duration: prettyMs(Math.round(parseFloat((now() - start).toFixed(2))))
+          })
+        }
       }
+    } catch (e) {
+      console.log('error', e)
     }
-
-    // @ts-ignore
-    Adoscope.recordingRequest = false
   }
 }

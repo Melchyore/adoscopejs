@@ -6,17 +6,28 @@
  * Copyright (c) 2019 Paradox.
  */
 
-import * as pluralize from 'pluralize'
 import * as _ from 'lodash'
 import * as prettyMs from 'pretty-ms'
 import onChange from 'on-change'
 
-import { Database, AdoscopeConfig, AdoscopeQuery } from '../Contracts'
+import { DatabaseContract as Database, SqlContract as Sql, BuilderContract as Builder } from '../Contracts/Database'
+import { QueryWatcherContract } from '../Contracts/Watchers'
+
 import EntryType from '../EntryType'
+import Adoscope from '../Adoscope'
 import Watcher from './Watcher'
-import Adoscope from '../Adoscope';
 
 const now = require('performance-now')
+
+export type AdoscopeQuery = {
+  start: number,
+  end?: number,
+  time?: number,
+  stringTime?: string,
+  finished: boolean,
+  query?: string,
+  table?: string
+} & Sql
 
 /**
  * Class used to listen to all queries and store them into database.
@@ -27,7 +38,7 @@ const now = require('performance-now')
  *
  * @extends {Watcher}
  */
-export default class QueryWatcher extends Watcher {
+export default class QueryWatcher extends Watcher implements QueryWatcherContract {
 
   /**
    * Creates an instance of QueryWatcher.
@@ -44,7 +55,7 @@ export default class QueryWatcher extends Watcher {
     private _queries: Map<string, AdoscopeQuery> = new Map(),
     private _statements: {[x: string]: object} = {}
   ) {
-    super()
+    super(_app.config)
 
     this._listen()
     this._onChange()
@@ -61,8 +72,12 @@ export default class QueryWatcher extends Watcher {
    * @memberof QueryWatcher
    */
   private _listen (): void {
-    this._database.on('query', (query: AdoscopeQuery) => {
+    this._database.on('query', async (query: AdoscopeQuery) => {
       if (this._app.enabled()) {
+        if (!(await this._app.isRecording())) {
+          return
+        }
+
         this._queries.set(
           query.__knexQueryUid, {
             start: now(),
@@ -86,7 +101,7 @@ export default class QueryWatcher extends Watcher {
    */
   private _onChange (): void {
     this._statements = onChange({}, async (path: string, value: AdoscopeQuery) => {
-      await this._store(EntryType.QUERY, value)
+      await this._store(this.type, value)
     })
   }
 
@@ -111,8 +126,8 @@ export default class QueryWatcher extends Watcher {
     return true
   }
 
-  public get type (): string {
-    return 'query'
+  public get type (): EntryType {
+    return EntryType.QUERY
   }
 
   /**
@@ -123,7 +138,7 @@ export default class QueryWatcher extends Watcher {
    * @memberof QueryWatcher
    */
   public record (): void {
-    this._database.on('query-response', async (response: any, query: Database.Sql, builder: Database.Builder) => {
+    this._database.on('query-response', async (response: any, query: Sql, builder: Builder) => {
       const table = builder._single ? builder._single.table : null
 
       if (!this._approveQuery(table)) {
@@ -133,22 +148,21 @@ export default class QueryWatcher extends Watcher {
       const end = now()
 
       let _query: AdoscopeQuery = this._queries.get(query.__knexQueryUid)
-      _query = {
-        ..._query,
-        end,
-        time: Math.round(parseFloat((end - _query.start).toFixed(2))),
-        finished: true,
-        query: builder.toString(),
-        table
+
+      if (_query) {
+        _query = {
+          ..._query,
+          end,
+          time: Math.round(parseFloat((end - _query.start).toFixed(2))),
+          finished: true,
+          query: builder.toString(),
+          table
+        }
+
+        _query.stringTime = prettyMs(_query.time)
+
+        this._statements[query.__knexQueryUid] = _query
       }
-
-      _query.stringTime = prettyMs(_query.time)
-
-      this._statements[query.__knexQueryUid] = _query
-
-      /*if (Adoscope.recordingRequest) {
-        Adoscope.data[pluralize.plural(entryType)].push(_query)
-      }*/
     })
   }
 
