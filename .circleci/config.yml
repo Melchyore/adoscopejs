@@ -13,6 +13,7 @@ jobs:
             - v1-dependencies-
       - run: npm install
       - run: npm install typescript
+      - run: npm rebuild
       - save_cache:
           paths:
             - node_modules
@@ -30,6 +31,7 @@ jobs:
             - v1-dependencies-
       - run: npm install
       - run: npm install typescript
+      - run: npm rebuild
       - save_cache:
           paths:
             - node_modules
