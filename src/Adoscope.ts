@@ -139,7 +139,11 @@ export default class Adoscope {
     }
 
     if (this._shouldWatch('log')) {
-      this._addWatcher(new LogWatcher(this))
+      const logWatcher = new LogWatcher(this, this._app.use('Logger'))
+
+      this._addWatcher(logWatcher)
+
+      logWatcher.record()
     }
   }
 
