@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0](https://github.com/Melchyore/adoscope/compare/v0.3.0...v0.4.0) (2019-05-27)
+
+
+### Features
+
+* **contracts:** add Logger types ([1139b8a](https://github.com/Melchyore/adoscope/commit/1139b8a))
+
+
+### Tests
+
+* add test for LogWatcher ([4886a76](https://github.com/Melchyore/adoscope/commit/4886a76))
+
+
+
 ## [0.3.0](https://github.com/Melchyore/adoscope/compare/v0.2.1...v0.3.0) (2019-05-25)
 
 
