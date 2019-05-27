@@ -206,7 +206,7 @@ export default class ModelWatcher extends Watcher {
    * @memberof ModelWatcher
    */
   private get namespace(): string {
-    return 'app/Models'
+    return 'App/Models'
   }
 
   public get type (): EntryType {
@@ -249,7 +249,7 @@ export default class ModelWatcher extends Watcher {
    * @memberof ModelWatcher
    */
   public async record (): Promise<void> {
-    const modelsPath = path.join(process.cwd(), this.namespace)
+    const modelsPath = path.join(process.cwd(), this.namespace).replace('App', 'app')
     const models = await promises.readdir(modelsPath)
 
     if (models.length > 0) {
