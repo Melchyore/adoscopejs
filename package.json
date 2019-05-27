@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Melchyore/adoscope.git"
+    "url": "git+https://github.com/Melchyore/adoscopejs.git"
   },
   "keywords": [
     "adonis",
@@ -26,9 +26,9 @@
   "author": "Paradox",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Melchyore/adoscope/issues"
+    "url": "https://github.com/Melchyore/adoscopejs/issues"
   },
-  "homepage": "https://github.com/Melchyore/adoscope#readme",
+  "homepage": "https://github.com/Melchyore/adoscopejs#readme",
   "dependencies": {
     "@types/lodash": "^4.14.123",
     "@types/mime-types": "^2.1.0",
