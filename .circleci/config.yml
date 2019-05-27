@@ -4,7 +4,7 @@ jobs:
   build_10.15.3:
     docker:
       - image: 'circleci/node:10.15.3'
-    working_directory: ~/
+    working_directory: ~/adoscopejs
     steps:
       - checkout
       - restore_cache:
@@ -21,7 +21,7 @@ jobs:
   build_latest:
     docker:
       - image: 'circleci/node:latest'
-    working_directory: ~/app
+    working_directory: ~/adoscopejs
     steps:
       - checkout
       - restore_cache:
