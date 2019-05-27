@@ -10,5 +10,6 @@ If you wan't to test, please read instructions.md file.
 [![Dependencies](https://img.shields.io/david/Melchyore/adoscopejs.svg?style=flat-square)](https://david-dm.org/Melchyore/adoscopejs)
 ![](https://img.shields.io/badge/types-Typescript-blue.svg?style=flat-square)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Coveralls](https://coveralls.io/repos/github/Melchyore/adoscopejs/badge.svg?branch=master)](https://coveralls.io/github/Melchyore/adoscopejs)
 
 [![NPM](https://nodei.co/npm/adoscopejs.png?downloads=true&downloadRank=true)](https://nodei.co/npm/adoscopejs/)
