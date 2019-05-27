@@ -206,7 +206,7 @@ export default class ModelWatcher extends Watcher {
    * @memberof ModelWatcher
    */
   private get namespace(): string {
-    return 'App/Models'
+    return 'app/Models'
   }
 
   public get type (): EntryType {
