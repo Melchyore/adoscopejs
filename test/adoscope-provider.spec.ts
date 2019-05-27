@@ -110,6 +110,12 @@ test.group('Adoscope provider test', group => {
     assert.isAbove(_entries.length, 0)
   })
 
+  test('LogWatcher should record Logger messages', async (assert) => {
+    const Adoscope = ioc.use('Adonis/Adoscope')
+
+    assert.isAbove(Adoscope.getWatcher('log').logs.length, 0)
+  })
+
   test('ExceptionWatcher should record Adonisjs exceptions but not Adoscope', async (assert) => {
     await request(appUrl).get('/zefzefz')
 
