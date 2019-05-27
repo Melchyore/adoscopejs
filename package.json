@@ -1,6 +1,6 @@
 {
   "name": "adoscopejs",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Debugger for Adonisjs-based applications",
   "main": "index.js",
   "scripts": {
