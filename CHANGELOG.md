@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.10](https://github.com/Melchyore/adoscopejs/compare/v0.4.9...v0.4.10) (2019-05-27)
+
+
+### Bug Fixes
+
+* **readme:** fix badge url ([23b5742](https://github.com/Melchyore/adoscopejs/commit/23b5742))
+
+
+
 ### [0.4.9](https://github.com/Melchyore/adoscopejs/compare/v0.4.8...v0.4.9) (2019-05-27)
 
 
