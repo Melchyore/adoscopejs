@@ -7,42 +7,29 @@
  */
 
 import * as _ from 'lodash'
+import * as Transport from 'winston-transport'
+import { LEVEL } from 'triple-beam'
+
+import { Logger as WinstonLogger, LogEntry } from 'winston'
+import { LoggerContract as Logger } from '../Contracts/Logger'
 
 import EntryType from '../EntryType'
 import Adoscope from '../Adoscope'
-import Utils from '../lib/Utils'
 import Watcher from './Watcher'
-
-const intercept = require('intercept-stdout')
 
 export default class LogWatcher extends Watcher {
 
   constructor (
     private _app: Adoscope,
-    private _stdWrite = process.stdout.write,
+    private _logger: Logger,
     private _logs: Array<string> = [],
   ) {
     super(_app.config)
+    this.winstonLogger.add(new AdoscopeTransport())
+  }
 
-    intercept(async (text: string) => {
-      if (await this._app.isRecording()) {
-        if (!text.trim().startsWith('\u001b[32m✓')) {
-          const log = Utils.stripANSIColor(text)
-          let data = {}
-
-          if (typeof log === 'string') {
-            data = {
-              level: 'log',
-              text: log
-            }
-          } else {
-            data = log
-          }
-
-          this._store(this.type, data)
-        }
-      }
-    })
+  private get winstonLogger (): WinstonLogger {
+    return this._logger.driver.logger
   }
 
   public get type (): EntryType {
@@ -50,6 +37,38 @@ export default class LogWatcher extends Watcher {
   }
 
 
-  public record (): void {}
+  public get logs (): Array<string> {
+    return this._logs
+  }
 
+  public record (): void {
+    _.last(this.winstonLogger.transports).on('logged', async (log: LogEntry) => {
+      if (!(await this._app.isRecording())) {
+        return
+      }
+
+      // For testing only.
+      this._logs.push(log.message)
+
+      await this._store(this.type, {
+        level: log[LEVEL],
+        text: log.message
+      })
+    })
+  }
+
+}
+
+class AdoscopeTransport extends Transport {
+  constructor (opts?: object) {
+    super(opts)
+  }
+
+  log (info: any, callback: Function) {
+    setImmediate(() => {
+      this.emit('logged', info)
+    })
+
+    callback()
+  }
 }

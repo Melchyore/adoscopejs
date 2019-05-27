@@ -46,8 +46,8 @@ export default class ModelWatcher extends Watcher {
 
   /**
    * Listens to models queries.
-   * [custom=true] means the model does not exist under
-   * model's namespace definied in @member [namespace] .
+   * `custom=true` means the model does not exist under
+   * model's namespace definied in `namespace` .
    *
    * @private
    *
