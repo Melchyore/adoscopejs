@@ -21,18 +21,21 @@ class Jsonify {
     })
   }
 
+  /* istanbul ignore next */
   async _beforeSave (instance) {
     if (instance.content) {
       instance.content = JSON.stringify(instance.content)
     }
   }
 
+  /* istanbul ignore next */
   async _afterSaveOrFind (instance) {
     if (instance.content && typeof instance.content === 'string') {
       instance.content = JSON.parse(instance.content)
     }
   }
 
+  /* istanbul ignore next */
   async _afterFetch (instances) {
     _.forEach(instances, instance => {
       if (instance.content && typeof instance.content === 'string') {

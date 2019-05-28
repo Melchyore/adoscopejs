@@ -45,6 +45,7 @@ class AdoscopeEntry extends Model {
   }
 
   static whereType (query, type) {
+    /* istanbul ignore next */
     if (type) {
       query.where('type', type)
     }
