@@ -6,7 +6,8 @@
   "scripts": {
     "mix": "cross-env NODE_ENV=development webpack --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
     "watch": "cross-env NODE_ENV=development webpack --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
-    "test": "node japaFile.js",
+    "test": "nyc node japaFile.js",
+    "coveralls": "npm test && nyc report --reporter=text-lcov | coveralls",
     "release": "standard-version"
   },
   "repository": {
@@ -61,6 +62,7 @@
     "axios": "^0.18.0",
     "bootstrap": "^4.3.1",
     "bootstrap-vue": "^2.0.0-rc.20",
+    "coveralls": "^3.0.3",
     "cz-conventional-changelog": "^2.1.0",
     "highlight.js": "^9.15.6",
     "husky": "^2.3.0",
@@ -72,6 +74,7 @@
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.25",
     "node-exceptions": "^4.0.1",
+    "nyc": "^14.1.1",
     "on-finished": "^2.3.0",
     "performance-now": "^2.1.0",
     "pluralize": "^7.0.0",

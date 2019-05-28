@@ -131,3 +131,5 @@ app/**/*.sqlite
 docs/
 resources/
 public
+
+.nyc_output
